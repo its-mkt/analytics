@@ -23,7 +23,7 @@ Google Cloud 콘솔·서비스 계정·JSON 키는 **필요 없다.** GA4 를 �
 5. **웹앱으로 배포** — 오른쪽 위 `배포 → 새 배포 → 유형: 웹 앱` → 실행 계정 **나**, 액세스 권한 **모든 사용자** → 배포 → 나오는 **웹 앱 URL** 을 복사한다.
 6. **GitHub Secret 등록** — 이 저장소 Settings → Secrets and variables → Actions → New repository secret: 이름 `GA4_WEBAPP_URL`, 값 = 5번 URL.
 7. Actions → **Update Dashboard** → Run workflow. 이후 3시간마다 자동으로 받아 배포한다.
-8. 끝. 대시보드는 **https://itketweb.github.io/itket-analytics/** 에서 본다.
+8. 끝. 대시보드는 **https://its-analytics.itket.com/** 에서 본다. (예전 주소 its-mkt.github.io/itket-analytics 는 자동으로 넘어간다)
 
 > 서비스 계정 방식(`GA4_PROPERTY_ID` + `GA4_SERVICE_ACCOUNT` Secret)도 코드에 남아 있어 쓸 수 있지만, 위 방식이 더 간단해 기본으로 한다.
 

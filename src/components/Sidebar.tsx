@@ -7,6 +7,20 @@ import {
   X,
 } from 'lucide-react';
 import type { ViewTab } from '../types/analytics';
+import { Dropdown, type DropdownOption } from './Dropdown';
+
+type DashboardId = 'ad-insight' | 'analytics';
+
+/** 브랜드 선택 박스로 오가는 대시보드 — 개발 서버에서는 각 프로젝트의 로컬 서버, 배포본에서는 운영 주소로 간다 (its-ad-insight 사이드바와 같은 목록) */
+const DASHBOARDS: { id: DashboardId; label: string; local: string; live: string }[] = [
+  { id: 'ad-insight', label: 'its-ad-insight', local: 'http://localhost:2000/', live: 'https://its-ad-insight.itket.com/' },
+  { id: 'analytics', label: 'its-analytics', local: 'http://localhost:1000/', live: 'https://its-analytics.itket.com/' },
+];
+const DASHBOARD_OPTIONS: DropdownOption<DashboardId>[] = DASHBOARDS.map((d) => ({ value: d.id, label: d.label, title: import.meta.env.DEV ? d.local : d.live }));
+const goDashboard = (id: DashboardId) => {
+  const d = DASHBOARDS.find((x) => x.id === id);
+  if (d) window.location.href = import.meta.env.DEV ? d.local : d.live;
+};
 
 interface SidebarProps {
   title: string;
@@ -44,22 +58,25 @@ export function Sidebar({
           <X size={18} aria-hidden="true" />
         </button>
 
-        <a
-          className="brand"
-          id="brand"
-          href="./"
-          title="처음으로"
-          onClick={(e) => {
-            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
-            e.preventDefault();
-            onGoHome();
-          }}
-        >
-          <i className="brand-icon">
-            <BarChart3 size={15} aria-hidden="true" />
-          </i>
-          <span>{title}</span>
-        </a>
+        {/* 브랜드: 아이콘은 처음 화면으로, 이름은 대시보드 선택 박스 (its-ad-insight ↔ its-analytics) */}
+        <div className="brand" id="brand">
+          <a
+            className="brand-home"
+            href="./"
+            title={`${title} 처음으로`}
+            aria-label="처음으로"
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+              e.preventDefault();
+              onGoHome();
+            }}
+          >
+            <i className="brand-icon">
+              <BarChart3 size={15} aria-hidden="true" />
+            </i>
+          </a>
+          <Dropdown<DashboardId> className="brand-dd" id="dd-dashboard" ariaLabel="대시보드 선택" options={DASHBOARD_OPTIONS} value="analytics" onChange={goDashboard} />
+        </div>
 
         <nav className="sn" id="sideNav" aria-label="사이드바 메뉴">
           <div className="lbl">대시보드</div>
