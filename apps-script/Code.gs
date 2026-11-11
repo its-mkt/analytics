@@ -23,7 +23,7 @@ const CFG = {
   TOP_ROWS: 50,
   FILE_NAME: 'itket-analytics-data.json',
   BUDGET_MS: 4.5 * 60 * 1000,                // 한 번 실행에 쓸 최대 시간(6분 제한 대비)
-  SCHEMA: 3,                                 // 수집 항목이 바뀌면 올린다 → 과거 월을 다시 채움 (3: 전환·이벤트·랜딩 추가)
+  SCHEMA: 4,                                 // 수집 항목이 바뀌면 올린다 → 과거 월을 다시 채움 (3: 전환·이벤트·랜딩 추가, 4: 기기별 유입·전환)
   MEASUREMENT_ID: 'G-EJ5SHHZPND',            // 참고용(데이터 스트림 식별). 수집에는 PROPERTY_ID 를 쓴다
   // 전환 정의: 이 화면(경로)을 본 세션을 "전환"으로 센다. 사이트가 전환 이벤트를 보내지 않아 화면 기준으로 센다.
   // 바꾸려면 여기만 고치고 SCHEMA 숫자를 올린다. path 는 정확히 일치해야 한다.
@@ -130,9 +130,9 @@ function landKey_(u) {
 
 /** 전환(정의된 화면을 본 세션) 집계: 전체·일별·유입 매체·채널·캠페인·랜딩 페이지·상품. n = 같은 키의 전체 세션(전환율 계산용). */
 function convStats_(range) {
-  const out = { defs: CFG.CONVERSIONS.map((d) => ({ id: d.id, name: d.name, path: d.path })), total: {}, daily: {}, byMedium: {}, byChannel: {}, byCampaign: {}, byLanding: {}, byGoods: {} };
+  const out = { defs: CFG.CONVERSIONS.map((d) => ({ id: d.id, name: d.name, path: d.path })), total: {}, daily: {}, byMedium: {}, byChannel: {}, byCampaign: {}, byLanding: {}, byGoods: {}, byDevice: {}, byDeviceChannel: {} };
   const ids = CFG.CONVERSIONS.map((d) => d.id);
-  ids.forEach((id) => { out.total[id] = { sessions: 0, users: 0 }; out.daily[id] = []; ['byMedium', 'byChannel', 'byCampaign', 'byLanding', 'byGoods'].forEach((b) => (out[b][id] = [])); });
+  ids.forEach((id) => { out.total[id] = { sessions: 0, users: 0 }; out.daily[id] = []; ['byMedium', 'byChannel', 'byCampaign', 'byLanding', 'byGoods', 'byDevice', 'byDeviceChannel'].forEach((b) => (out[b][id] = [])); });
   const cf = convFilter_();
   q_(['pagePath'], ['sessions', 'activeUsers'], range, { dimensionFilter: cf }).forEach((r) => {
     const id = convIdOf_(r.pagePath); if (id) out.total[id] = { sessions: r.sessions, users: r.activeUsers };
@@ -154,6 +154,9 @@ function convStats_(range) {
   by('byMedium', ['sessionSourceMedium']);
   by('byChannel', ['sessionDefaultChannelGroup']);
   by('byCampaign', ['sessionCampaignName', 'sessionSourceMedium']);
+  // 기기별(desktop·mobile·tablet) 전환, 기기 × 채널 전환 — k 는 'mobile' · 'mobile | Paid Search'
+  by('byDevice', ['deviceCategory']);
+  by('byDeviceChannel', ['deviceCategory', 'sessionDefaultChannelGroup']);
   // 랜딩(첫 진입) 페이지 기준: 어느 페이지로 들어온 방문이 전환했는가. 상품 상세는 상품번호로 묶는다.
   const baseL = {};
   q_(['landingPagePlusQueryString'], ['sessions'], range, { orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 5000 }).forEach((r) => {
@@ -189,6 +192,8 @@ function collectMonth_(m, today, reuse) {
   const channels = q_(['sessionDefaultChannelGroup'], ['sessions', 'activeUsers'], range, top('sessions'));
   const campaigns = q_(['sessionCampaignName', 'sessionSourceMedium'], ['sessions', 'activeUsers'], range, top('sessions'));
   const devices = q_(['deviceCategory'], ['activeUsers', 'sessions'], range, top('sessions'));
+  // 기기 × 채널 유입 (세션·사용자·참여 세션). 기기 3종 × 채널 10여 개라 상위 제한 없이 모두 받는다
+  const deviceChannels = q_(['deviceCategory', 'sessionDefaultChannelGroup'], ['sessions', 'activeUsers', 'engagedSessions'], range, { orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 200 });
   const sg = signupsOf_(range);
   // 무거운 조회: 재사용 가능한 최근 값이 있으면 다시 계산하지 않는다
   const fresh = reuse && reuse.goods && reuse.shopUpdated && (Date.now() - Date.parse(reuse.shopUpdated) < CFG.SHOP_REFRESH_MIN * 60000);
@@ -213,6 +218,7 @@ function collectMonth_(m, today, reuse) {
     pages: pages, sources: sources, channels: channels,
     campaigns: campaigns.filter((r) => r.sessionCampaignName && r.sessionCampaignName !== '(not set)' && r.sessionCampaignName !== '(direct)'),
     devices: devices,
+    deviceChannels: deviceChannels,               // 기기 × 기본 채널 그룹 유입 (SCHEMA 4 부터)
     signups: sg.rows, signupSource: sg.source,   // 'event' = GA4 sign_up 이벤트, 'join_ok' = 가입 완료 화면(일별 방문자) 기준
     conv: conv,                                   // 전환(정의된 화면 기준) — null 이면 이번 수집에서 실패
     events: events, keyBySource: keyBySource.filter((r) => r.keyEvents > 0), ecom: ecom,   // GA4 이벤트 현황 / GA4 주요 이벤트 기준 전환 / 이커머스 상품 지표
