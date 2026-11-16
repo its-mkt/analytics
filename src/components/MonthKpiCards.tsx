@@ -1,6 +1,6 @@
 import type { GodomallQuotes, MetricKey, MonthData } from '../types/analytics';
 import { dur, fmt } from '../utils/format';
-import { convDaily, godoCount, metricOf, sumDays, tracksEstimate } from '../utils/metrics';
+import { godoCount, metricOf, tracksEstimate } from '../utils/metrics';
 import { DeltaBadge } from './DeltaBadge';
 import { KpiCardsGrid, type KpiItem } from './KpiCardsGrid';
 
@@ -33,8 +33,9 @@ export function MonthKpiCards({
   prevKey: prevK,
   yoyKey: yoyK,
 }: MonthKpiCardsProps) {
+  // 진행 중인 달도 전월 전체와 비교한다 (ad-insight 와 같은 기준, 사용자 결정 2026-11-16) — 진행 중이면 전년 배지는 두지 않는다
   const partialDays = m.partial ? m.daily.length : null;
-  const prevLabel = partialDays ? '전월 동기간' : '전월';
+  const prevLabel = '전월';
 
   // 체류시간 계산
   let curDur = 0;
@@ -46,7 +47,8 @@ export function MonthKpiCards({
     curDur = curUsersSum ? curDurSum / curUsersSum : 0;
 
     if (prev) {
-      const prevPart = prev.daily.filter((r) => +r.date.slice(8) <= partialDays);
+      // 이번 달과 같은 '일별 합산' 기준으로, 전월은 한 달 전체
+      const prevPart = prev.daily;
       const prevDurSum = prevPart.reduce((a, r) => a + (r.userEngagementDuration || 0), 0);
       const prevUsersSum = prevPart.reduce((a, r) => a + (r.activeUsers || 0), 0);
       prevAvgDur = prevUsersSum ? prevDurSum / prevUsersSum : 0;
@@ -63,9 +65,7 @@ export function MonthKpiCards({
 
   const items: KpiItem[] = KPI_DEFS.map(([label, key]) => {
     const cur = metricOf(m, key);
-    const prevVal = partialDays
-      ? (prev ? sumDays(prev, key, partialDays) : null)
-      : (prev ? metricOf(prev, key) : null);
+    const prevVal = prev ? metricOf(prev, key) : null;
     const yoyVal = yoy ? metricOf(yoy, key) : null;
 
     const badge = partialDays ? (
@@ -73,7 +73,7 @@ export function MonthKpiCards({
         <DeltaBadge
           cur={cur}
           prev={prevVal}
-          label="전월 동기간"
+          label="전월"
         />
       ) : null
     ) : (
@@ -118,11 +118,9 @@ export function MonthKpiCards({
   const estCur = godoEst != null ? godoEst : ga4Est;
   const estPrev =
     godoEst != null
-      ? godoCount(godoQuotes, prevK ?? prev?.month, partialDays)
+      ? godoCount(godoQuotes, prevK ?? prev?.month, null)
       : prev && prev.conv
-        ? partialDays
-          ? convDaily(prev, 'estimate', partialDays)
-          : (prev.conv.total.estimate || { sessions: 0 }).sessions
+        ? (prev.conv.total.estimate || { sessions: 0 }).sessions
         : null;
   const estYoy =
     godoEst != null
@@ -130,8 +128,6 @@ export function MonthKpiCards({
       : yoy && yoy.conv
         ? (yoy.conv.total.estimate || { sessions: 0 }).sessions
         : null;
-  const estCurForDelta =
-    godoEst == null && partialDays ? convDaily(m, 'estimate', partialDays) : estCur;
 
   // 견적을 세지 않는 사이트(온코어)는 견적 카드를 두지 않는다
   if (tracksEstimate([m])) items.unshift({
@@ -140,7 +136,7 @@ export function MonthKpiCards({
     loading: !!godoQuotesLoading,
     badge: partialDays ? (
       estPrev != null ? (
-        <DeltaBadge cur={estCurForDelta} prev={estPrev} label="전월 동기간" />
+        <DeltaBadge cur={estCur} prev={estPrev} label="전월" />
       ) : null
     ) : (
       <>

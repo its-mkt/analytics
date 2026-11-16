@@ -8,7 +8,7 @@ import type {
   NamesMap,
 } from '../types/analytics';
 import { fmt, pct } from '../utils/format';
-import { CONV_BY, convDaily, godoCount } from '../utils/metrics';
+import { CONV_BY, godoCount } from '../utils/metrics';
 import { CardHeader } from './CardHeader';
 import { Card } from './Card';
 import { DeltaBadge } from './DeltaBadge';
@@ -23,7 +23,6 @@ interface ConversionSectionProps {
   prevMonthData?: MonthData;
   /** 실건수(고도몰 DB)를 비교할 전월 — GA4 비교가 빠진 달이어도 실건수는 비교한다 */
   prevKey?: string;
-  partialDays: number | null;
   names: NamesMap;
   godoSignups?: GodomallSignups | null;
   godoQuotes?: GodomallQuotes | null;
@@ -145,7 +144,6 @@ export function ConversionSection({
   monthData,
   prevMonthData,
   prevKey: prevK,
-  partialDays,
   names,
   godoSignups,
   godoQuotes,
@@ -208,20 +206,15 @@ export function ConversionSection({
           const isSignup = d.id === 'signup';
 
           const godoEst = isEstimate ? godoCount(godoQuotes, monthData.month, null) : null;
-          // 진행 중인 달은 전월도 같은 1~n일만 (월 전체와 비교하면 감소로 보임)
+          // 진행 중인 달도 전월 전체와 비교한다 (KPI 공통 기준, 사용자 결정 2026-11-16)
           const prevGodoEst = isEstimate
-            ? godoCount(godoQuotes, prevK ?? prevMonthData?.month, partialDays)
+            ? godoCount(godoQuotes, prevK ?? prevMonthData?.month, null)
             : null;
 
           const godoSign = isSignup ? godoCount(godoSignups, monthData.month, null) : null;
-          // 가입 실데이터는 일별 값이 없으면 동기간 합산이 불가 → null(비교 생략)
           const prevGodoSign = isSignup
-            ? godoCount(godoSignups, prevK ?? prevMonthData?.month, partialDays)
+            ? godoCount(godoSignups, prevK ?? prevMonthData?.month, null)
             : null;
-          const prevSignFull =
-            isSignup && partialDays && prevGodoSign == null
-              ? godoCount(godoSignups, prevK ?? prevMonthData?.month, null)
-              : null;
 
           const isLoading = !!godoQuotesLoading;
           const actualCount = isEstimate ? godoEst : isSignup ? godoSign : null;
@@ -232,9 +225,7 @@ export function ConversionSection({
             actualCount != null
               ? prevActualCount
               : prevMonthData && prevMonthData.conv
-                ? partialDays
-                  ? convDaily(prevMonthData, d.id, partialDays)
-                  : (prevMonthData.conv.total[d.id] || {}).sessions
+                ? (prevMonthData.conv.total[d.id] || {}).sessions
                 : null;
 
           const cats =
@@ -250,17 +241,7 @@ export function ConversionSection({
             loading: isLoading,
             badge:
               pv != null ? (
-                <DeltaBadge
-                  cur={
-                    actualCount != null
-                      ? cur
-                      : partialDays
-                        ? convDaily(monthData, d.id, partialDays)
-                        : cur
-                  }
-                  prev={pv}
-                  label={partialDays ? '전월 동기간' : '전월'}
-                />
+                <DeltaBadge cur={cur} prev={pv} label="전월" />
               ) : null,
             sub:
               actualCount != null ? (
@@ -269,13 +250,6 @@ export function ConversionSection({
                     {Object.entries(cats)
                       .map(([k, v]) => `${k} ${v}`)
                       .join(' · ')}
-                  </div>
-                ) : prevSignFull != null ? (
-                  <div
-                    className="l sub1 sub-top"
-                    title="고도몰 가입자 실데이터는 월 합계만 있어 같은 기간끼리 비교할 수 없습니다"
-                  >
-                    전월 전체 {fmt(prevSignFull)} · 일별 자료 없어 동기간 비교 생략
                   </div>
                 ) : null
               ) : null,

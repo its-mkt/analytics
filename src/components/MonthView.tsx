@@ -78,7 +78,6 @@ export function MonthView({
   const prevStartDay = lateStartDay(months, prevK);
   const prev = startDay ? undefined : okCmp(months, prevK);
   const yoy = startDay ? undefined : okCmp(months, yoyKey(monthKey));
-  const partialDays = m.partial ? m.daily.length : null;
 
   const series = m.daily.map((r) => k2v(r, m));
   const sp = suspOf(m);
@@ -148,7 +147,6 @@ export function MonthView({
           monthData={m}
           prevMonthData={prev}
           prevKey={prevK}
-          partialDays={partialDays}
           names={names}
           godoSignups={godoSignups}
           godoQuotes={godoQuotes}

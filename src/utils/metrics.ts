@@ -58,15 +58,6 @@ export const suspOf = (m: MonthData): { list: PageRow[]; excess: number } => {
   return { list, excess };
 };
 
-export const sumDays = (m: MonthData, k: MetricKey, n: number): number =>
-  k === 'signups'
-    ? (m.signups || [])
-        .filter((r) => +r.date.slice(8) <= n)
-        .reduce((a, r) => a + r.count, 0)
-    : m.daily
-        .filter((r) => +r.date.slice(8) <= n)
-        .reduce((a, r) => a + r[k], 0);
-
 export const prevKey = (k: string): string => {
   const [y, mo] = k.split('-').map(Number);
   return mo === 1 ? `${y - 1}-12` : `${y}-${String(mo - 1).padStart(2, '0')}`;
@@ -104,7 +95,7 @@ export const lateStartDay = (months: Record<string, MonthData>, k: string): numb
 /**
  * 회원가입 실건수 = 회원 DB(es_member) 값. 단 DB 는 1년 넘게 접속하지 않은 회원이 휴면 보관소로 옮겨지며 빠져서
  * 오래된 달일수록 줄어든다(2025-09: DB 1 ↔ 관리자 통계 19). 가입 시점에 남은 고도몰 관리자 통계(admin)가 더 크면 그 값을 쓴다.
- * 일별(daily)은 DB 값 그대로 — 진행 중인 달·전월 동기간 계산에만 쓰고, 최근 달은 두 값이 같다.
+ * 일별(daily)은 DB 값 그대로 — 진행 중인 달 1~n일 합산에만 쓰고, 최근 달은 두 값이 같다.
  */
 export function mergeSignups(
   db: GodomallSignups | null | undefined,
@@ -126,7 +117,7 @@ export const k2v = (r: DailyMetric, m: MonthData): DailyMetricWithSignups => {
   return { ...r, signups: s ? s.count : 0 };
 };
 
-/** 시트 실집계(월별·일별) 건수. n 이 있으면 그 달 1~n일만 합산(전월 동기간 비교용). 데이터 없으면 null. */
+/** 시트 실집계(월별·일별) 건수. n 이 있으면 그 달 1~n일만 합산(진행 중인 달의 현재 값). 데이터 없으면 null. */
 export function godoCount(
   src: { monthly: Record<string, number>; daily?: Record<string, number> } | null | undefined,
   month: string | undefined,
@@ -141,11 +132,6 @@ export function godoCount(
   }
   return sum;
 }
-
-export const convDaily = (m: MonthData, id: string, n: number | null): number =>
-  ((m.conv && m.conv.daily[id]) || [])
-    .filter((r) => !n || +r.date.slice(8) <= n)
-    .reduce((a, r) => a + r.count, 0);
 
 const GENERIC_TITLE = /^아이티켓 - /;
 

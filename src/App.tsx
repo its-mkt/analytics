@@ -162,7 +162,7 @@ function Dashboard({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: 
     if (!md) return undefined;
     const mm = +periodSel.slice(5);
     return md.partial
-      ? `${mm}월은 ${md.daily.length}일차까지 집계 · 전월 대비는 같은 기간끼리 비교합니다`
+      ? `${mm}월은 ${md.daily.length}일차까지 집계 · 전월 대비는 전월 한 달 전체와 비교합니다`
       : `${mm}월 마감 완료`;
   })();
 
