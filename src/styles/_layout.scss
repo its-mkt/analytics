@@ -107,7 +107,7 @@
 
     .dropdown-trigger {
       width: 100%;
-      height: var(--h-40);
+      height: var(--h-32); // 옆 로고 상자(32)와 같은 높이
       padding: 0 0.5rem;
       border-color: transparent;
       border-radius: var(--radius-btn); // 마우스를 올렸을 때 배경도 알약

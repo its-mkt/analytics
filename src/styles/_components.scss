@@ -1219,7 +1219,7 @@
 
     .period-control-box {
       display: flex;
-      height: 2.125rem;
+      height: var(--h-32); // 드롭다운 기본 높이와 같게 (높이 단계 안)
       width: 100%;
       border-radius: 0.5rem;
       font-size: 0.8125rem;
@@ -2111,7 +2111,7 @@ body.drawer-open-lock {
     justify-content: space-between;
     gap: 0.5rem;
     height: 100%;
-    min-height: var(--h-40);
+    min-height: var(--h-32); // 드롭다운 기본 32 (검색 줄은 .sbox 에서 40)
     padding: 0 0.75rem;
     border: 1px solid var(--line2);
     border-radius: 0.5rem;
@@ -2123,7 +2123,7 @@ body.drawer-open-lock {
     line-height: 1.2;
     white-space: nowrap;
     cursor: pointer;
-    box-shadow: var(--sh);
+    box-shadow: none; // 드롭다운은 그림자 없이 (사용자 결정)
     transition: all 0.15s ease;
 
     &:hover {
@@ -2246,7 +2246,7 @@ body.drawer-open-lock {
   display: inline-flex;
   align-items: stretch;
   gap: 0.375rem;
-  height: var(--h-40);
+  height: var(--h-32); // 기간 선택 줄 전체 32 (연·월 상자·이전/다음·당월 함께)
 
   .mp-step,
   .mp-today {
@@ -2259,7 +2259,7 @@ body.drawer-open-lock {
     background: var(--card);
     color: var(--ink2);
     font: inherit;
-    box-shadow: var(--sh);
+    box-shadow: none;
     cursor: pointer;
     transition: all 0.15s ease;
 
@@ -2282,7 +2282,7 @@ body.drawer-open-lock {
   }
 
   .mp-step {
-    width: var(--h-40);
+    width: var(--h-32);
 
     svg {
       width: 1rem;
@@ -2305,7 +2305,7 @@ body.drawer-open-lock {
     border: 1px solid var(--line2);
     border-radius: var(--radius-btn);
     background: var(--card);
-    box-shadow: var(--sh);
+    box-shadow: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
     &:hover {
