@@ -6,6 +6,9 @@ import type {
 } from '../types/analytics';
 import { fmt } from '../utils/format';
 import { isGap, metricOf, okM } from '../utils/metrics';
+import { CardHeader } from './CardHeader';
+import { TableFoot } from './TableFoot';
+import { TableWrap } from './TableWrap';
 
 interface YearSummaryTableProps {
   year: string;
@@ -46,14 +49,13 @@ export function YearSummaryTable({
       id="sectionYearSummary"
       aria-labelledby="headingYearSummary"
     >
-      <div className="card-head-bar">
-        <h2 id="headingYearSummary">
-          <span>월별 요약</span>
-          <span className="sub-title">행을 누르면 해당 월 상세 분석으로 이동</span>
-        </h2>
-      </div>
+      <CardHeader
+        id="headingYearSummary"
+        title="월별 요약"
+        sub="행을 누르면 해당 월 상세 분석으로 이동"
+      />
 
-      <div className="tw">
+      <TableWrap>
         <table className="stk">
           <thead>
             <tr>
@@ -153,15 +155,10 @@ export function YearSummaryTable({
             </tr>
           </tfoot>
         </table>
-      </div>
-      <div className="tbl-foot">
-        <div className="foot-left">
-          <b>방문자</b> 일별 합산 · <b>세션·PV·신규</b> GA4 기준 · <b>회원가입·견적요청</b> (*고도몰 DB 실접수)
-        </div>
-        <div className="foot-right">
-          단위: 명·회·건
-        </div>
-      </div>
+      </TableWrap>
+      <TableFoot unit="단위: 명·회·건">
+        <b>방문자</b> 일별 합산 · <b>세션·PV·신규</b> GA4 기준 · <b>회원가입·견적요청</b> (*고도몰 DB 실접수)
+      </TableFoot>
     </section>
   );
 }

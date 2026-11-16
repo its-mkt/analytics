@@ -1,4 +1,6 @@
 import { FileSpreadsheet, Menu, Moon, Sun } from 'lucide-react';
+import { periodLabel } from '../utils/format';
+import { Button } from './Button';
 
 interface HeaderProps {
   isPage: boolean;
@@ -21,13 +23,7 @@ export function Header({
   onToggleTheme,
   onExportExcel,
 }: HeaderProps) {
-  const crumb = isPage
-    ? '페이지 분석'
-    : sel
-      ? sel.length === 4
-        ? `${sel}년 연간`
-        : `${sel.slice(0, 4)}년 ${+sel.slice(5)}월`
-      : '';
+  const crumb = isPage ? '페이지 분석' : sel ? periodLabel(sel) : '';
 
   let updText = '아직 수집된 데이터가 없습니다';
   let stale = false;
@@ -50,17 +46,15 @@ export function Header({
 
   return (
     <header className="top">
-      <button
-        type="button"
-        className="btn ic burger"
+      <Button
+        className="ic burger"
         id="burger"
         aria-label="메뉴 열기"
         aria-expanded={drawerOpen}
         aria-controls="side"
         onClick={onOpenDrawer}
-      >
-        <Menu size={18} aria-hidden="true" />
-      </button>
+        icon={<Menu size={18} aria-hidden="true" />}
+      />
 
       <h1>
         <span className="ttx">대시보드 </span>
@@ -93,16 +87,15 @@ export function Header({
           <i className="tgl-thumb" aria-hidden="true" />
         </button>
         {onExportExcel && (
-          <button
-            type="button"
-            className="btn btn-excel"
+          <Button
+            className="btn-excel"
             id="btnExportExcel"
             title="현재 화면의 실적 데이터를 엑셀(.xlsx)로 다운로드합니다"
             onClick={onExportExcel}
+            icon={<FileSpreadsheet size={15} aria-hidden="true" />}
           >
-            <FileSpreadsheet size={15} aria-hidden="true" />
-            <span>엑셀 다운로드</span>
-          </button>
+            엑셀 다운로드
+          </Button>
         )}
       </div>
     </header>

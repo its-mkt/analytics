@@ -1,3 +1,4 @@
+import { Calendar } from 'lucide-react';
 import type {
   ConvByKey,
   GodomallQuotes,
@@ -8,16 +9,19 @@ import type {
   NamesMap,
   ShopTabKey,
 } from '../types/analytics';
+import { monthLabel } from '../utils/format';
 import { k2v, METRICS, okM, prevKey, suspOf, yoyKey } from '../utils/metrics';
 import { DailyChart } from './BarChart';
 import { ConversionSection } from './ConversionSection';
 import { MonthViewSkeleton } from './DashboardSkeleton';
 import { InternalFilterNote } from './InternalFilterNote';
 import { MonthKpiCards } from './MonthKpiCards';
+import { Note } from './Note';
 import { PageHeader } from './PageHeader';
 import { PopularPagesCard } from './PopularPagesCard';
 import { SegmentedControl } from './SegmentedControl';
 import { ShopCard } from './ShopCard';
+import { Tag } from './Tag';
 import { WhyCard } from './WhyCard';
 import { SourceNotice, type SourceLinkItem } from './SourceNotice';
 
@@ -87,24 +91,19 @@ export function MonthView({
         }
         title={
           currentTab === 'conversion'
-            ? `${monthKey.slice(0, 4)}년 ${+monthKey.slice(5)}월 전환 성과 분석`
+            ? `${monthLabel(monthKey)} 전환 성과 분석`
             : currentTab === 'content'
-              ? `${monthKey.slice(0, 4)}년 ${+monthKey.slice(5)}월 페이지 · 상품 랭킹`
-              : `${monthKey.slice(0, 4)}년 ${+monthKey.slice(5)}월 실적 분석`
+              ? `${monthLabel(monthKey)} 페이지 · 상품 랭킹`
+              : `${monthLabel(monthKey)} 실적 분석`
         }
         icon={
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect width="18" height="18" x="3" y="4" rx="2" />
-            <path d="M3 10h18" />
-            <path d="M8 2v4" />
-            <path d="M16 2v4" />
-          </svg>
+          <Calendar aria-hidden="true" />
         }
         meta={
           m.partial ? (
-            <span className="tag warn">진행 중 ({m.daily.length}일차)</span>
+            <Tag tone="warn">진행 중 ({m.daily.length}일차)</Tag>
           ) : (
-            <span className="tag ok">마감 완료</span>
+            <Tag tone="ok">마감 완료</Tag>
           )
         }
       />
@@ -112,9 +111,9 @@ export function MonthView({
       <InternalFilterNote internal={internal} monthKey={monthKey} />
 
       {m.partial && (
-        <div className="note">
+        <Note>
           진행 중인 달입니다 ({m.daily.length}일차까지 집계). 전월 대비는 같은 기간끼리 비교합니다.
-        </div>
+        </Note>
       )}
 
       {/* 1. 종합 요약 (overview): KPI 요약 카드 + 일별 추이 차트 + 분석 각주 */}

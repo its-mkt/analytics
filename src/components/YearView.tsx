@@ -1,3 +1,4 @@
+import { ChartLine } from 'lucide-react';
 import type {
   GodomallQuotes,
   GodomallSignups,
@@ -11,6 +12,7 @@ import { DeltaBadge } from './DeltaBadge';
 import { KpiCardsGrid } from './KpiCardsGrid';
 import { PageHeader } from './PageHeader';
 import { SegmentedControl } from './SegmentedControl';
+import { Tag } from './Tag';
 import { YearSummaryTable } from './YearSummaryTable';
 import { SourceNotice, type SourceLinkItem } from './SourceNotice';
 
@@ -146,15 +148,12 @@ export function YearView({
         eyebrow="ANNUAL REPORT · 연간 성과 리포트"
         title={`${year}년 연간 성과 요약`}
         icon={
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 3v18h18" />
-            <path d="m19 9-5 5-4-4-3 3" />
-          </svg>
+          <ChartLine aria-hidden="true" />
         }
         meta={
-          <span className="tag">
+          <Tag>
             {isFullYear ? '12개월 전체 집계' : `${validMonths.length}개월 누적`}
-          </span>
+          </Tag>
         }
       />
 

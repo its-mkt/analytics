@@ -1,12 +1,14 @@
+import { Fragment } from 'react';
 import {
   BarChart3,
   FileSearch,
   LayoutDashboard,
   ShoppingBag,
   Target,
-  X,
+  type LucideIcon,
 } from 'lucide-react';
 import type { ViewTab } from '../types/analytics';
+import { CloseButton } from './CloseButton';
 import { Dropdown, type DropdownOption } from './Dropdown';
 
 type DashboardId = 'ad-insight' | 'analytics';
@@ -21,6 +23,28 @@ const goDashboard = (id: DashboardId) => {
   const d = DASHBOARDS.find((x) => x.id === id);
   if (d) window.location.href = import.meta.env.DEV ? d.local : d.live;
 };
+
+interface NavItem {
+  tab: ViewTab;
+  id: string;
+  label: string;
+  Icon: LucideIcon;
+}
+
+const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
+  {
+    label: '대시보드',
+    items: [
+      { tab: 'overview', id: 'navOverview', label: '종합 요약', Icon: LayoutDashboard },
+      { tab: 'conversion', id: 'navConversion', label: '전환 분석', Icon: Target },
+      { tab: 'content', id: 'navContent', label: '페이지 · 상품', Icon: ShoppingBag },
+    ],
+  },
+  {
+    label: '검색 · 탐색',
+    items: [{ tab: 'page', id: 'navPage', label: 'URL 분석', Icon: FileSearch }],
+  },
+];
 
 interface SidebarProps {
   title: string;
@@ -48,15 +72,12 @@ export function Sidebar({
         onClick={onCloseDrawer}
       />
       <aside className={`side ${open ? 'open' : ''}`} id="side">
-        <button
-          type="button"
+        <CloseButton
           className="btn ic sclose"
           id="sclose"
-          aria-label="메뉴 닫기"
+          label="메뉴 닫기"
           onClick={onCloseDrawer}
-        >
-          <X size={18} aria-hidden="true" />
-        </button>
+        />
 
         {/* 브랜드: 아이콘은 처음 화면으로, 이름은 대시보드 선택 박스 (ad-insight ↔ analytics) */}
         <div className="brand" id="brand">
@@ -79,45 +100,28 @@ export function Sidebar({
         </div>
 
         <nav className="sn" id="sideNav" aria-label="사이드바 메뉴">
-          <div className="lbl">대시보드</div>
-          <button
-            type="button"
-            className={`m ${currentTab === 'overview' ? 'on' : ''}`}
-            id="navOverview"
-            onClick={() => onSelectTab('overview')}
-          >
-            <LayoutDashboard size={15} aria-hidden="true" />
-            <span>종합 요약</span>
-          </button>
-          <button
-            type="button"
-            className={`m ${currentTab === 'conversion' ? 'on' : ''}`}
-            id="navConversion"
-            onClick={() => onSelectTab('conversion')}
-          >
-            <Target size={15} aria-hidden="true" />
-            <span>전환 분석</span>
-          </button>
-          <button
-            type="button"
-            className={`m ${currentTab === 'content' ? 'on' : ''}`}
-            id="navContent"
-            onClick={() => onSelectTab('content')}
-          >
-            <ShoppingBag size={15} aria-hidden="true" />
-            <span>페이지 · 상품</span>
-          </button>
-
-          <div className="lbl" style={{ marginTop: '0.5rem' }}>검색 · 탐색</div>
-          <button
-            type="button"
-            className={`m ${currentTab === 'page' ? 'on' : ''}`}
-            id="navPage"
-            onClick={() => onSelectTab('page')}
-          >
-            <FileSearch size={15} aria-hidden="true" />
-            <span>URL 분석</span>
-          </button>
+          {NAV_GROUPS.map((group, gi) => (
+            <Fragment key={group.label}>
+              <div
+                className="lbl"
+                style={gi > 0 ? { marginTop: '0.5rem' } : undefined}
+              >
+                {group.label}
+              </div>
+              {group.items.map(({ tab, id, label, Icon }) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={`m ${currentTab === tab ? 'on' : ''}`}
+                  id={id}
+                  onClick={() => onSelectTab(tab)}
+                >
+                  <Icon size={15} aria-hidden="true" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </Fragment>
+          ))}
         </nav>
 
         {/* 마케팅팀 · 배포 날짜 기준 릴리즈 표기 */}

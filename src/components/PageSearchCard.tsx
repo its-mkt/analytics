@@ -1,5 +1,8 @@
-import { ArrowLeft, Search, ShoppingBag, X } from 'lucide-react';
-import { CustomSelect } from './CustomSelect';
+import { ArrowLeft, Search, ShoppingBag } from 'lucide-react';
+import { monthLabel } from '../utils/format';
+import { Button } from './Button';
+import { CloseButton } from './CloseButton';
+import { Dropdown } from './Dropdown';
 
 interface PageSearchCardProps {
   inputQ: string;
@@ -42,15 +45,15 @@ export function PageSearchCard({
           </span>
         </h2>
         {onBackToDashboard && (
-          <button
-            type="button"
-            className="btn btn-sm btn-back"
+          <Button
+            size="sm"
+            className="btn-back"
             onClick={onBackToDashboard}
             title="대시보드 메인으로 돌아가기"
+            icon={<ArrowLeft size={13} aria-hidden="true" />}
           >
-            <ArrowLeft size={13} aria-hidden="true" />
-            <span>대시보드로 복귀</span>
-          </button>
+            대시보드로 복귀
+          </Button>
         )}
       </div>
 
@@ -74,15 +77,13 @@ export function PageSearchCard({
             autoComplete="off"
           />
           {inputQ && (
-            <button
-              type="button"
+            <CloseButton
               className="btn-clear"
-              aria-label="검색어 지우기"
+              label="검색어 지우기"
               title="검색어 지우기"
+              size={13}
               onClick={() => onInputChange('')}
-            >
-              <X size={13} aria-hidden="true" />
-            </button>
+            />
           )}
         </div>
         <datalist id="pgList">
@@ -90,19 +91,21 @@ export function PageSearchCard({
             <option key={p} value={p} />
           ))}
         </datalist>
-        <CustomSelect
+        <Dropdown
           className="search-month-select"
+          ariaLabel="분석 월"
           value={pageM}
-          options={validMonths.map((k) => ({
-            value: k,
-            label: `${k.slice(0, 4)}년 ${+k.slice(5)}월`,
-          }))}
+          options={validMonths.map((k) => ({ value: k, label: monthLabel(k) }))}
           onChange={onChangeMonth}
         />
-        <button className="btn pri btn-search" type="submit">
-          <Search size={14} aria-hidden="true" />
-          <span>조회</span>
-        </button>
+        <Button
+          type="submit"
+          variant="primary"
+          className="btn-search"
+          icon={<Search size={14} aria-hidden="true" />}
+        >
+          조회
+        </Button>
       </form>
 
       <div className="chips">

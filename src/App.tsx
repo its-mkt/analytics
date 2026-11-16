@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { EmptyState } from './components/EmptyState';
 import { ExportModal } from './components/ExportModal';
 import { Header } from './components/Header';
 import { LivePanel } from './components/LivePanel';
@@ -147,11 +148,11 @@ export function App() {
                 onBackToDashboard={() => handleSelectPeriod(pageM || latestKey, false)}
               />
             ) : !keys.length ? (
-              <div className="empty">
+              <EmptyState>
                 아직 수집된 데이터가 없습니다.
                 <br />
                 저장소의 Actions에서 “Update Dashboard”를 실행하면 첫 수집이 시작됩니다.
-              </div>
+              </EmptyState>
             ) : /^\d{4}$/.test(sel) ? (
               <YearView
                 year={sel}
