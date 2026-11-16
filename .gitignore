@@ -8,3 +8,4 @@ data/ref/.browser-profile*/
 data/ref/*.log
 data/ref/*.png
 *.png
+.vscode/
