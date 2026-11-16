@@ -139,7 +139,7 @@
     border: 1px solid var(--line2);
     background: var(--card);
     color: var(--ink2);
-    border-radius: 1rem;
+    border-radius: var(--radius-btn);
     padding: 0.25rem 0.75rem;
     font-size: 0.75rem;
     cursor: pointer;
@@ -214,7 +214,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.125rem 0.5rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-btn);
   font-variant-numeric: tabular-nums;
   line-height: 1.35;
   margin-right: 0.35rem;
@@ -319,7 +319,7 @@
   gap: 0.25rem;
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-btn);
   padding: 0.25rem;
 
   &.full {
@@ -336,13 +336,13 @@
     button {
       font-size: 0.875rem;
       padding: 0.25rem 0.5rem;
-      border-radius: 0.25rem;
+      border-radius: var(--radius-btn);
     }
   }
 
   button {
     border: 0;
-    border-radius: 0.25rem;
+    border-radius: var(--radius-btn);
     background: none;
     color: var(--sub);
     padding: 0.25rem 0.75rem;
@@ -431,7 +431,9 @@
     font-size: 0.75rem;
     font-weight: 500;
     padding: 0.25rem 0.625rem;
-    border-radius: 0.375rem;
+    border-radius: var(--radius-btn);
+    white-space: nowrap; // 알약 안에서 두 줄로 꺾이지 않게 (휴대폰)
+    flex: none;
     cursor: pointer;
     transition: all 0.15s ease;
 
@@ -504,7 +506,7 @@
     display: inline-block;
     margin-left: 0.5rem;
     padding: 0.25rem 0.5rem;
-    border-radius: 0.5rem;
+    border-radius: var(--radius-btn);
     font-size: 0.75rem;
     font-weight: 600;
     vertical-align: middle;
@@ -907,7 +909,7 @@
   font-size: 0.8125rem;
   font-weight: 500;
   padding: 0.35rem 0.75rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-btn);
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
@@ -970,7 +972,7 @@
   background: var(--accbg);
   color: var(--acc);
   border: 1px solid rgba(94, 106, 210, 0.2);
-  border-radius: 0.25rem;
+  border-radius: var(--radius-btn);
   font-size: 0.6875rem;
   font-weight: 600;
   padding: 0.1rem 0.35rem;
@@ -1000,7 +1002,7 @@
   padding: 0 0.85rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-btn);
   background: var(--card);
   border: 1px solid var(--line2);
   color: var(--ink);
@@ -1105,7 +1107,7 @@
     background: transparent;
     color: var(--sub);
     padding: 0.35rem;
-    border-radius: 0.375rem;
+    border-radius: var(--radius-btn);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1288,7 +1290,7 @@
     align-items: center;
     gap: 0.35rem;
     padding: 0.2rem 0.45rem;
-    border-radius: 0.375rem;
+    border-radius: var(--radius-btn);
     transition: all 0.15s ease;
 
     &:hover {
@@ -1402,7 +1404,7 @@
     border: 1px solid var(--line2);
     background: var(--card);
     color: var(--ink2);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-btn);
     cursor: pointer;
     transition: all 0.15s ease;
 
@@ -1419,7 +1421,7 @@
     padding: 0 1rem;
     font-size: 0.8125rem;
     font-weight: 600;
-    border-radius: 0.5rem;
+    border-radius: var(--radius-btn);
 
     &:disabled {
       opacity: 0.5;
@@ -2000,7 +2002,7 @@ body.drawer-open-lock {
       align-items: center;
       gap: 0.35rem;
       padding: 0.45rem 0.75rem;
-      border-radius: 0.5rem;
+      border-radius: var(--radius-btn);
       border: 1px solid var(--line2);
       color: var(--ink2);
       background: var(--card);
@@ -2018,7 +2020,7 @@ body.drawer-open-lock {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 0.5rem;
+      border-radius: var(--radius-btn);
       border: 1px solid var(--line2);
       background: var(--card);
       color: var(--sub);
@@ -2224,7 +2226,7 @@ body.drawer-open-lock {
     justify-content: center;
     padding: 0;
     border: 1px solid var(--line2);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-btn);
     background: var(--card);
     color: var(--ink2);
     font: inherit;
@@ -2272,7 +2274,7 @@ body.drawer-open-lock {
     display: inline-flex;
     align-items: stretch;
     border: 1px solid var(--line2);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-btn);
     background: var(--card);
     box-shadow: var(--sh);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -2287,13 +2289,13 @@ body.drawer-open-lock {
     }
 
     > .dd:first-child .dd-trigger {
-      border-top-left-radius: 0.5rem;
-      border-bottom-left-radius: 0.5rem;
+      border-top-left-radius: var(--radius-btn);
+      border-bottom-left-radius: var(--radius-btn);
     }
 
     > .dd:last-child .dd-trigger {
-      border-top-right-radius: 0.5rem;
-      border-bottom-right-radius: 0.5rem;
+      border-top-right-radius: var(--radius-btn);
+      border-bottom-right-radius: var(--radius-btn);
     }
 
     > .dd + .dd {

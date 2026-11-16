@@ -118,7 +118,7 @@
       height: 2.75rem;
       padding: 0;
       justify-content: center;
-      border-radius: 0.75rem;
+      border-radius: var(--radius-btn);
 
       span {
         display: none;
@@ -136,7 +136,7 @@
     height: 2.75rem;
     padding: 0;
     justify-content: center;
-    border-radius: 0.75rem;
+    border-radius: var(--radius-btn);
 
     span {
       display: none;
