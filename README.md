@@ -1,4 +1,4 @@
-# itket-analytics
+# analytics
 
 itket.com 의 GA4 데이터를 **자동으로 모아 보여주는 월별 대시보드**. 사람이 하는 일은 없다.
 
