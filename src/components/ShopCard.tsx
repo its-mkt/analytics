@@ -3,6 +3,7 @@ import type { MonthData, NamesMap, ShopTabKey } from '../types/analytics';
 import { fmt } from '../utils/format';
 import { shopItemName } from '../utils/metrics';
 import { CardHeader } from './CardHeader';
+import { Card } from './Card';
 import { EmptyState } from './EmptyState';
 import { ProgressBar } from './ProgressBar';
 import { RankBadge } from './RankBadge';
@@ -40,12 +41,12 @@ export function ShopCard({
   const list = monthData[shopTab];
   if (!list) {
     return (
-      <section className="card card-shop-empty mt" id="sectionShopEmpty">
+      <Card className="card-shop-empty mt" id="sectionShopEmpty">
         <h2>고도몰 인기 항목</h2>
         <EmptyState>
           이 달은 아직 집계 전입니다. 수집기가 과거 월을 순서대로 채우는 중이면 잠시 후 나타납니다.
         </EmptyState>
-      </section>
+      </Card>
     );
   }
 
@@ -58,10 +59,10 @@ export function ShopCard({
   const label = SHOP_LABELS[shopTab];
 
   return (
-    <section
-      className="card card-shop"
+    <Card
+      className="card-shop"
       id="sectionShop"
-      aria-labelledby="headingShop"
+      labelledBy="headingShop"
     >
       <CardHeader
         id="headingShop"
@@ -124,6 +125,6 @@ export function ShopCard({
       <TableFoot unit="단위: 회·%">
         <b>조회수</b> GA4 기준 · <b>명칭</b> 고도몰 매핑 · {shopTab === 'goods' ? '행 클릭 시 상품 분석 서랍' : '상위 30건'}
       </TableFoot>
-    </section>
+    </Card>
   );
 }

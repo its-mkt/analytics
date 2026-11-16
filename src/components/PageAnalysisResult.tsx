@@ -2,6 +2,7 @@ import type { PageAnalysisResult as PageAnalysisData } from '../types/analytics'
 import { SUSP_MIN_PV, SUSP_RATIO } from '../utils/metrics';
 import { buildPageDailySeries, buildPageKpis } from '../utils/pageAnalysis';
 import { DailyChart } from './BarChart';
+import { Card } from './Card';
 import { CardHeader } from './CardHeader';
 import { EmptyState } from './EmptyState';
 import { KpiCardsGrid } from './KpiCardsGrid';
@@ -80,18 +81,18 @@ export function PageAnalysisResult({
       />
 
       {isDrawer ? (
-        <section
-          className="card card-page-daily-views"
+        <Card
+          className="card-page-daily-views"
           id="sectionDrawerDailyViews"
         >
           <CardHeader title="일별 조회수" sub={fetchedSub} />
           <DailyChart vals={sv} dates={dates} unit="" />
-        </section>
+        </Card>
       ) : (
-        <section
-          className="card card-page-daily-views"
+        <Card
+          className="card-page-daily-views"
           id="sectionPageDailyViews"
-          aria-labelledby="headingPageDailyViews"
+          labelledBy="headingPageDailyViews"
         >
           <h2 id="headingPageDailyViews">
             <span>
@@ -100,7 +101,7 @@ export function PageAnalysisResult({
             </span>
           </h2>
           <DailyChart vals={sv} dates={dates} unit="" />
-        </section>
+        </Card>
       )}
 
       <PageAnalysisDetails

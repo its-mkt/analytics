@@ -133,16 +133,7 @@ export function LivePanel({ liveUrl }: LivePanelProps) {
               ({dev || '집계 중'} · {agoText(ago)})
             </span>
           </div>
-          <button
-            type="button"
-            className="btn-live-toggle"
-            onClick={toggleCollapsed}
-            aria-label="실시간 접속 현황 자세히 보기"
-            title="실시간 접속 현황 자세히 보기"
-          >
-            <span>자세히 보기</span>
-            <ChevronDown size={14} aria-hidden="true" />
-          </button>
+          <LiveToggle open={false} onClick={toggleCollapsed} />
         </div>
       </div>
     );
@@ -151,16 +142,7 @@ export function LivePanel({ liveUrl }: LivePanelProps) {
   return (
     <div id="liveBox">
       <section className="live" id="livePanel" aria-label="실시간 접속 현황">
-        <button
-          type="button"
-          className="btn-live-toggle live-toggle-abs"
-          onClick={toggleCollapsed}
-          aria-label="실시간 패널 접기"
-          title="실시간 패널 접기"
-        >
-          <span>접기</span>
-          <ChevronUp size={14} aria-hidden="true" />
-        </button>
+        <LiveToggle open onClick={toggleCollapsed} />
         <div className="live-stat" id="liveStatBox">
           <div className="l lh">
             <span className={`dot${live.stale ? ' off' : ''}`} />
@@ -217,5 +199,23 @@ export function LivePanel({ liveUrl }: LivePanelProps) {
         </div>
       </section>
     </div>
+  );
+}
+
+/** 실시간 상자 펼치기/접기 버튼 — 접힌 줄에서는 '자세히 보기', 펼친 상자 오른쪽 위에서는 '접기' */
+function LiveToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
+  const label = open ? '실시간 패널 접기' : '실시간 접속 현황 자세히 보기';
+  return (
+    <button
+      type="button"
+      className={open ? 'btn-live-toggle live-toggle-abs' : 'btn-live-toggle'}
+      onClick={onClick}
+      aria-label={label}
+      aria-expanded={open}
+      title={label}
+    >
+      <span>{open ? '접기' : '자세히 보기'}</span>
+      {open ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+    </button>
   );
 }

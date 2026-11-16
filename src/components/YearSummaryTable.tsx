@@ -7,6 +7,7 @@ import type {
 import { fmt } from '../utils/format';
 import { isGap, metricOf, okM, tracksEstimate } from '../utils/metrics';
 import { CardHeader } from './CardHeader';
+import { Card } from './Card';
 import { TableFoot } from './TableFoot';
 import { TableWrap } from './TableWrap';
 
@@ -49,10 +50,10 @@ export function YearSummaryTable({
   }, 0);
 
   return (
-    <section
-      className="card card-year-summary"
+    <Card
+      className="card-year-summary"
       id="sectionYearSummary"
-      aria-labelledby="headingYearSummary"
+      labelledBy="headingYearSummary"
     >
       <CardHeader
         id="headingYearSummary"
@@ -179,6 +180,6 @@ export function YearSummaryTable({
       <TableFoot unit="단위: 명·회·건">
         <b>방문자</b> 일별 합산 · <b>세션·PV·신규</b> GA4 기준 · {showEst ? <><b>회원가입·견적요청</b> (*고도몰 DB 실접수)</> : <><b>회원가입</b> 가입 완료 화면 기준</>}
       </TableFoot>
-    </section>
+    </Card>
   );
 }

@@ -1,6 +1,7 @@
 import { ArrowLeft, Search, ShoppingBag } from 'lucide-react';
 import { monthLabel } from '../utils/format';
 import { Button } from './Button';
+import { Card } from './Card';
 import { CloseButton } from './CloseButton';
 import { Dropdown } from './Dropdown';
 
@@ -30,10 +31,10 @@ export function PageSearchCard({
   onBackToDashboard,
 }: PageSearchCardProps) {
   return (
-    <section
-      className="card card-page-search"
+    <Card
+      className="card-page-search"
       id="sectionPageSearch"
-      aria-labelledby="headingPageSearch"
+      labelledBy="headingPageSearch"
     >
       <div className="card-top-bar">
         <h2 id="headingPageSearch">
@@ -138,6 +139,6 @@ export function PageSearchCard({
         <code>goodsNo=11166</code> 은 그 상품 상세 페이지,{' '}
         <code>/huawei/</code> 는 화웨이 하위 페이지 전체. 결과는 수집기가 직접 GA4에서 가져와 몇 분간 캐시합니다(조회가 몰리면 잠시 쉴 수 있음).
       </p>
-    </section>
+    </Card>
   );
 }

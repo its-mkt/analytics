@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import type { NamesMap, PageRow } from '../types/analytics';
 import { dur, fmt } from '../utils/format';
 import { CardHeader } from './CardHeader';
+import { Card } from './Card';
 import { ProgressBar } from './ProgressBar';
 import { RankBadge } from './RankBadge';
 import { SuspiciousPageNote } from './SuspiciousPageNote';
@@ -50,10 +51,10 @@ export function PopularPagesCard({
   );
 
   return (
-    <section
-      className="card card-popular-pages"
+    <Card
+      className="card-popular-pages"
       id="sectionPopularPages"
-      aria-labelledby="headingPopularPages"
+      labelledBy="headingPopularPages"
     >
       <CardHeader id="headingPopularPages" title="인기 페이지" />
       <TableWrap isEmpty={pages.length === 0}>
@@ -124,6 +125,6 @@ export function PopularPagesCard({
         excess={susp.excess}
         totalViews={totalViews}
       />
-    </section>
+    </Card>
   );
 }

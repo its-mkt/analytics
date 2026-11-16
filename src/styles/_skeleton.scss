@@ -283,3 +283,20 @@
     row-gap: 1.25rem;
   }
 }
+
+// 실제 KPI 카드 안에서 값만 늦게 오는 동안 (KpiCardsGrid item.loading) — 값·배지 자리 크기
+.kpi {
+  .kpi-skel-val {
+    display: block;
+    width: 3.25rem;
+    height: 2.75rem;
+    border-radius: 0.25rem;
+  }
+
+  .kpi-skel-sub {
+    display: block;
+    width: 4.5rem;
+    height: 0.625rem;
+    border-radius: 0.1875rem;
+  }
+}

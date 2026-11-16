@@ -4,6 +4,7 @@ import type { MonthData, NamesMap } from '../types/analytics';
 import { fmt } from '../utils/format';
 import { isGap } from '../utils/metrics';
 import { EmptyState } from './EmptyState';
+import { Card } from './Card';
 import { Note } from './Note';
 import { PageAnalysisResult } from './PageAnalysisResult';
 import { PageAnalysisSkeleton } from './PageAnalysisSkeleton';
@@ -75,11 +76,11 @@ export function PageAnalysisView({
   let bodyContent: React.ReactNode = null;
   if (!pageQ) {
     bodyContent = (
-      <section className="card card-empty" id="sectionPageEmpty">
+      <Card className="card-empty" id="sectionPageEmpty">
         <EmptyState>
           위에서 페이지를 고르거나 주소·상품번호를 입력해 조회하세요.
         </EmptyState>
-      </section>
+      </Card>
     );
   } else if (pageBusy || !pageRes) {
     bodyContent = <PageAnalysisSkeleton query={pageQ} />;
@@ -89,7 +90,7 @@ export function PageAnalysisView({
       : pageRes.error;
     const has = fallbackSeries.some((r) => r.views != null);
     bodyContent = (
-      <section className="card card-page-fallback" id="sectionPageFallback">
+      <Card className="card-page-fallback" id="sectionPageFallback">
         <Note className="mb-sm">{why}</Note>
         {has ? (
           <TableWrap>
@@ -117,7 +118,7 @@ export function PageAnalysisView({
         ) : (
           <EmptyState>저장된 상위 페이지에 없는 주소입니다.</EmptyState>
         )}
-      </section>
+      </Card>
     );
   } else {
     bodyContent = (

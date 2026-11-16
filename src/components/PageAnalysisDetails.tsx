@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import type { PageAnalysisResult } from '../types/analytics';
 import { fmt, pct } from '../utils/format';
 import { ProgressBar } from './ProgressBar';
+import { Card } from './Card';
 import { TableFoot } from './TableFoot';
 import { TableWrap } from './TableWrap';
 
@@ -20,16 +21,16 @@ interface DetailCardProps {
 /** 페이지 분석 하단의 제목 + 표 카드 */
 function DetailCard({ name, cls, title, isEmpty, empty, children }: DetailCardProps) {
   return (
-    <section
-      className={`card card-page-${cls}`}
+    <Card
+      className={`card-page-${cls}`}
       id={`cardPage${name}`}
-      aria-labelledby={`headingPage${name}`}
+      labelledBy={`headingPage${name}`}
     >
       <h2 id={`headingPage${name}`}>{title}</h2>
       <TableWrap isEmpty={isEmpty} empty={empty}>
         {children}
       </TableWrap>
-    </section>
+    </Card>
   );
 }
 

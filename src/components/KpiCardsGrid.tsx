@@ -1,4 +1,5 @@
 import { fmt } from '../utils/format';
+import { Skeleton } from './Skeleton';
 
 export interface KpiItem {
   label: string;
@@ -32,11 +33,11 @@ export function KpiCardsGrid({
           <div className="l kpi-label">{item.label}</div>
           <div className="v kpi-value">
             {item.loading
-              ? <span className="skel" style={{ width: '3.25rem', height: '2.75rem', display: 'block', borderRadius: '4px' }} aria-hidden="true" />
+              ? <Skeleton className="kpi-skel-val" />
               : typeof item.value === 'number' ? fmt(item.value) : item.value}
           </div>
           {item.loading
-            ? <span className="skel" style={{ width: '4.5rem', height: '0.625rem', display: 'block', borderRadius: '3px' }} aria-hidden="true" />
+            ? <Skeleton className="kpi-skel-sub" />
             : item.badge}
           {!item.loading && item.sub}
         </article>

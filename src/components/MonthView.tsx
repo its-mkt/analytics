@@ -8,8 +8,9 @@ import type {
   NamesMap,
   ShopTabKey,
 } from '../types/analytics';
-import { k2v, lateStartDay, METRICS, okCmp, prevKey, suspOf, yoyKey } from '../utils/metrics';
+import { k2v, lateStartDay, METRICS, okCmp, prevKey, suspOf, tracksEstimate, yoyKey } from '../utils/metrics';
 import { DailyChart } from './BarChart';
+import { Card } from './Card';
 import { ConversionSection } from './ConversionSection';
 import { MonthViewSkeleton } from './DashboardSkeleton';
 import { InternalFilterNote } from './InternalFilterNote';
@@ -68,7 +69,7 @@ export function MonthView({
 }: MonthViewProps) {
   const m = months[monthKey];
   if (!m) {
-    return <MonthViewSkeleton />;
+    return <MonthViewSkeleton tab={currentTab} hasEstimate={tracksEstimate(Object.values(months))} />;
   }
 
   // 이 달이나 비교할 달의 GA4 수집이 중간에 시작됐으면 비교하지 않는다 (빈 날이 섞여 증감이 부풀려짐)
@@ -117,10 +118,10 @@ export function MonthView({
             yoyKey={yoyKey(monthKey)}
           />
 
-          <section
-            className="card card-daily-chart"
+          <Card
+            className="card-daily-chart"
             id="sectionDailyChart"
-            aria-labelledby="headingDailyChart"
+            labelledBy="headingDailyChart"
           >
             <h2 id="headingDailyChart">
               <span>일별 추이</span>
@@ -135,7 +136,7 @@ export function MonthView({
               dates={m.daily.map((r) => r.date)}
               unit={chartMetric === 'signups' ? '건' : ''}
             />
-          </section>
+          </Card>
 
           <WhyCard />
         </>

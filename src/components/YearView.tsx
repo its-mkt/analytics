@@ -7,6 +7,7 @@ import type {
 import { fmt } from '../utils/format';
 import { metricOf, METRICS, okM, tracksEstimate } from '../utils/metrics';
 import { MonthlyChart } from './BarChart';
+import { Card } from './Card';
 import { DeltaBadge } from './DeltaBadge';
 import { KpiCardsGrid } from './KpiCardsGrid';
 import { SegmentedControl } from './SegmentedControl';
@@ -150,10 +151,10 @@ export function YearView({
         items={kpiItems}
       />
 
-      <section
-        className="card card-monthly-chart"
+      <Card
+        className="card-monthly-chart"
         id="sectionMonthlyChart"
-        aria-labelledby="headingMonthlyChart"
+        labelledBy="headingMonthlyChart"
       >
         <h2 id="headingMonthlyChart">
           <span>월별 추이</span>
@@ -176,7 +177,7 @@ export function YearView({
             }
           }}
         />
-      </section>
+      </Card>
 
       <YearSummaryTable
         year={year}

@@ -10,6 +10,7 @@ import type {
 import { fmt, pct } from '../utils/format';
 import { CONV_BY, convDaily, godoCount } from '../utils/metrics';
 import { CardHeader } from './CardHeader';
+import { Card } from './Card';
 import { DeltaBadge } from './DeltaBadge';
 import { KpiCardsGrid } from './KpiCardsGrid';
 import { ProgressBar } from './ProgressBar';
@@ -264,10 +265,7 @@ export function ConversionSection({
             sub:
               actualCount != null ? (
                 cats ? (
-                  <div
-                    className="l sub1 sub-top"
-                    style={{ fontSize: '0.8em', color: 'var(--text-muted, #64748b)', lineHeight: 1.3 }}
-                  >
+                  <div className="l sub1 sub-top sub-cats">
                     {Object.entries(cats)
                       .map(([k, v]) => `${k} ${v}`)
                       .join(' · ')}
@@ -285,33 +283,23 @@ export function ConversionSection({
         })}
       />
 
-      <p style={{ fontSize: '0.72rem', color: 'var(--sub)', margin: '-0.25rem 0 0.75rem', lineHeight: 1.5 }}>
+      {/* 실데이터(시트·회원 DB) 안내 — 아이티켓만 연동돼 있어 온코어에서는 두지 않는다 */}
+      {(godoQuotes || godoSignups) && (
+      <p className="conv-note">
         견적 요청은 고도몰 견적문의 시트(접수날짜 열), 회원가입은 고도몰 회원 DB(가입일) 기준이며 15분 캐시로 조회합니다.
         카드 제목에 "(실제 접수)"가 없으면 연동 실패로 GA4 완료화면 세션(가입은 마지막 저장된 월 합계)을 대신 표시한 것입니다.
       </p>
+      )}
 
-      <section
-        className="card card-conversion"
+      <Card
+        className="card-conversion"
         id="sectionConversion"
-        aria-labelledby="headingConversion"
+        labelledBy="headingConversion"
       >
         <CardHeader
           id="headingConversion"
-          title={
-            <>
-              <span>전환 분석</span>
-              <span
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 400,
-                  color: 'var(--text-muted, #64748b)',
-                  marginLeft: '8px',
-                }}
-              >
-                (유입 경로별 추적은 GA4 웹 세션 기준)
-              </span>
-            </>
-          }
+          title="전환 분석"
+          sub="(유입 경로별 추적은 GA4 웹 세션 기준)"
           actions={
             <SegmentedControl
               items={CONV_BY}
@@ -409,7 +397,7 @@ export function ConversionSection({
           <b>전환율</b> 전환 세션 ÷ 전체 세션 · <b>랜딩·상품</b> 첫 진입 기준
           {clickable ? ' · 행 클릭 시 상세 분석 이동' : ''}
         </TableFoot>
-      </section>
+      </Card>
     </>
   );
 }

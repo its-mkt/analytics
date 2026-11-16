@@ -5,7 +5,6 @@ import type { MonthData, NamesMap } from '../types/analytics';
 import { resolvePageTitle } from '../utils/pageAnalysis';
 import { Button } from './Button';
 import { CloseButton } from './CloseButton';
-import { EmptyState } from './EmptyState';
 import { PageAnalysisResult } from './PageAnalysisResult';
 import { PageAnalysisSkeleton } from './PageAnalysisSkeleton';
 
@@ -110,10 +109,9 @@ export function PageDrawer({
 
         {/* 드로어 본문 콘텐츠 */}
         <div className="drawer-content">
-          {pageBusy ? (
+          {/* 조회 중이거나 첫 결과가 오기 전(창이 막 열린 순간)은 같은 로딩 모양 */}
+          {pageBusy || !pageRes ? (
             <PageAnalysisSkeleton query={pageQ} />
-          ) : !pageRes ? (
-            <EmptyState>분석 데이터를 불러오는 중입니다...</EmptyState>
           ) : (
             <PageAnalysisResult
               result={pageRes}
