@@ -224,16 +224,14 @@
     }
   }
 
+  // 메뉴 닫기는 로고 줄(.brand, flex) 맨 끝 — 대시보드 선택이 남는 폭을 쓰고 닫기는 제 크기(48px)
   .btn.sclose {
     display: inline-flex;
-    position: absolute;
-    top: calc(0.75rem + env(safe-area-inset-top));
-    right: 0.75rem;
+    flex: none;
   }
 
   .brand {
-    padding-right: 3.5rem;
-    min-height: 2.75rem;
+    min-height: var(--h-48);
     font-size: 1rem;
   }
 

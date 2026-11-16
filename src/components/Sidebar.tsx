@@ -75,14 +75,7 @@ export function Sidebar({
         onClick={onCloseDrawer}
       />
       <aside className={`side ${open ? 'open' : ''}`} id="side">
-        <CloseButton
-          className="btn icon sclose"
-          id="sclose"
-          label="메뉴 닫기"
-          onClick={onCloseDrawer}
-        />
-
-        {/* 브랜드: 아이콘은 처음 화면으로, 이름은 대시보드 선택 박스 (ad-insight ↔ analytics) */}
+        {/* 브랜드: 아이콘은 처음 화면으로, 이름은 대시보드 선택 박스 (ad-insight ↔ analytics). 휴대폰에서는 줄 끝에 메뉴 닫기 */}
         <div className="brand" id="brand">
           <a
             className="brand-home"
@@ -100,6 +93,8 @@ export function Sidebar({
             </i>
           </a>
           <Dropdown<DashboardId> className="brand-dd" id="dd-dashboard" ariaLabel="대시보드 선택" options={DASHBOARD_OPTIONS} value="analytics" onChange={goDashboard} />
+          {/* 휴대폰 서랍에서만 보인다 — 위치를 띄우지 않고 로고 줄 맨 끝에 둔다 */}
+          <CloseButton className="btn icon sclose" id="sclose" label="메뉴 닫기" onClick={onCloseDrawer} />
         </div>
 
         {/* 사이트 선택 (아이티켓 / 온코어) — 주소 경로(/analytics/itket · /analytics/oncore)로 남아 링크를 공유해도 같은 사이트로 열린다 */}
