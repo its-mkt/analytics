@@ -22,6 +22,10 @@ const CFG = {
   JOIN_DONE_PATH: '/member/join_ok.php',     // 회원가입 완료 화면 — 사이트가 sign_up 이벤트를 보내지 않을 때의 대체 기준
   TOP_ROWS: 50,
   FILE_NAME: 'itket-analytics-data.json',
+  FILE_ID: '116fOOcfj-jNeYEKuj_2vbAkhUAHBnbNR', // 수집본 파일. 새로 만들면 이 값을 바꾼다
+  SHEET_ID: '1m2nYgwjzaAU5kGKaByzZEKwHrim3lyUK07B84-IBwBg', // 사람이 보는 시트 (itket-analytics 데이터)
+  SHEET_MONTHLY: '월별 요약',
+  SHEET_DAILY: '일별',
   BUDGET_MS: 4.5 * 60 * 1000,                // 한 번 실행에 쓸 최대 시간(6분 제한 대비)
   SCHEMA: 4,                                 // 수집 항목이 바뀌면 올린다 → 과거 월을 다시 채움 (3: 전환·이벤트·랜딩 추가, 4: 기기별 유입·전환)
   MEASUREMENT_ID: 'G-EJ5SHHZPND',            // 참고용(데이터 스트림 식별). 수집에는 PROPERTY_ID 를 쓴다
@@ -173,6 +177,12 @@ function convStats_(range) {
     out.byGoods[id] = rows.filter((r) => r.k.indexOf('goods:') === 0).slice(0, 50).map((r) => ({ k: r.k.slice(6), s: r.s, n: r.n }));
     out.byLanding[id] = rows.filter((r) => r.k.indexOf('goods:') !== 0).slice(0, 30);
   });
+  // 서버가 결제 주문마다 한 번 보내는 purchase 이벤트 (its-ad-insight sendGa4Purchases_). 전송 전에는 빈 값이다
+  const pf = { filter: { fieldName: 'eventName', stringFilter: { matchType: 'EXACT', value: 'purchase' } } };
+  out.purchase = opt_(() => ({
+    daily: q_(['date'], ['eventCount'], range, { dimensionFilter: pf, orderBys: [{ dimension: { dimensionName: 'date' } }] }).map((r) => ({ date: ymd_(r.date), count: r.eventCount })),
+    byMedium: q_(['sessionSourceMedium'], ['eventCount'], range, { dimensionFilter: pf, orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }], limit: 30 }).map((r) => ({ k: r.sessionSourceMedium, s: r.eventCount })),
+  }), { daily: [], byMedium: [] });
   return out;
 }
 
@@ -227,12 +237,46 @@ function collectMonth_(m, today, reuse) {
   };
 }
 
-function file_() {
-  const it = DriveApp.getFilesByName(CFG.FILE_NAME);
-  return it.hasNext() ? it.next() : DriveApp.createFile(CFG.FILE_NAME, '{"months":{}}', MimeType.PLAIN_TEXT);
+// 파일 이름이 아니라 ID 로 연다. 같은 이름의 바로가기·사본이 있으면 이름 검색이 엉뚱한 항목을 잡기 때문이다.
+function file_() { return DriveApp.getFileById(CFG.FILE_ID); }
+// 파일을 못 열면 그대로 오류를 낸다. 빈 데이터로 넘어가면 다음 저장 때 기존 수집본을 덮어쓸 수 있다.
+function load_() {
+  const text = file_().getBlob().getDataAsString();
+  if (!text.trim()) return { months: {} }; // 파일이 완전히 비었으면 되살릴 내용이 없으므로 GA4 에서 다시 채운다 (내용이 깨진 경우는 아래에서 오류)
+  try { return JSON.parse(text); } catch (e) { throw new Error(CFG.FILE_NAME + ' 내용이 JSON 이 아닙니다: ' + e.message); }
 }
-function load_() { try { return JSON.parse(file_().getBlob().getDataAsString()); } catch (e) { return { months: {} }; } }
 function save_(store) { file_().setContent(JSON.stringify(store)); }
+
+/** 사람이 보는 시트(월별 요약·일별)를 수집본으로 다시 쓴다. 표시용이라 실패해도 수집은 실패로 만들지 않는다. */
+function writeSheet_(store) {
+  try {
+    const ss = SpreadsheetApp.openById(CFG.SHEET_ID);
+    const put = (name, rows) => {
+      const sh = ss.getSheetByName(name) || ss.insertSheet(name);
+      const data = rows.map((r) => r.map((v) => (v === undefined || v === null ? '' : v)));
+      const range = sh.getRange(1, 1, data.length, data[0].length);
+      sh.getRange(1, 1, data.length, 1).setNumberFormat('@');   // 2025-01 이 날짜로 바뀌지 않게
+      range.setValues(data);
+      const extra = sh.getMaxRows() - data.length;
+      if (extra > 0) sh.getRange(data.length + 1, 1, extra, sh.getMaxColumns()).clearContent();
+      sh.setFrozenRows(1);
+    };
+    const num = (t) => [t.activeUsers, t.newUsers, t.sessions, t.screenPageViews, t.engagedSessions];
+    const head = ['활성 사용자', '신규 사용자', '세션', '페이지뷰', '참여 세션'];
+    const months = Object.keys(store.months).sort();
+    put(CFG.SHEET_MONTHLY, [['월'].concat(head, ['진행 중', '수집 시각'])].concat(months.map((m) => {
+      const x = store.months[m];
+      return [m].concat(num(x.total || {}), [x.partial ? 'Y' : '', x.updated || '']);
+    })));
+    const days = [];
+    months.forEach((m) => (store.months[m].daily || []).forEach((d) => days.push([d.date].concat(num(d)))));
+    if (days.length) put(CFG.SHEET_DAILY, [['날짜'].concat(head)].concat(days));
+    const old = ss.getSheetByName('시트1');
+    if (old && ss.getSheets().length > 1) ss.deleteSheet(old);   // 처음 손으로 만든 사본 탭
+  } catch (e) { console.warn('시트 기록 실패: ' + e.message); }
+}
+/** 수동 실행용: 지금 수집본으로 시트만 다시 쓴다. */
+function syncSheet() { writeSheet_(load_()); }
 
 function checkProperty_() {
   if (/[^0-9]/.test(CFG.PROPERTY_ID)) throw new Error('CFG.PROPERTY_ID 에 GA4 속성 ID(숫자)를 넣어 주세요.');
@@ -251,6 +295,7 @@ function collectRecent() {
     store.updated = new Date().toISOString();
     store.quota = LAST_QUOTA_ && { at: new Date().toISOString(), q: LAST_QUOTA_ };
     save_(store);
+    writeSheet_(store);
   } finally { lock.releaseLock(); }
 }
 
@@ -276,6 +321,7 @@ function collectAll() {
     store.errors = errors;
     if (!errors.length) store.updated = new Date().toISOString();
     save_(store);
+    writeSheet_(store);
     if (errors.length) throw new Error(errors.join('\n'));   // 실행 기록에 실패로 남김
   } finally { lock.releaseLock(); }
 }
