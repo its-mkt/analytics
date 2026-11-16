@@ -88,8 +88,8 @@
 
     .skel-chart-seg {
       width: 14rem;
-      height: 1.75rem;
-      border-radius: 0.5rem;
+      height: var(--h-32); // 실제 세그먼트(.seg)와 같은 높이·알약
+      border-radius: var(--radius-btn);
     }
   }
 
