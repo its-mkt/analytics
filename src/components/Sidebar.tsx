@@ -96,7 +96,7 @@ export function Sidebar({
             }}
           >
             <i className="brand-icon">
-              <Activity size={15} aria-hidden="true" />
+              <Activity size={20} aria-hidden="true" />
             </i>
           </a>
           <Dropdown<DashboardId> className="brand-dd" id="dd-dashboard" ariaLabel="대시보드 선택" options={DASHBOARD_OPTIONS} value="analytics" onChange={goDashboard} />

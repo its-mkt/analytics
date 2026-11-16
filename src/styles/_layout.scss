@@ -69,9 +69,10 @@
     background: var(--accbg);
   }
 
+  // 로고 상자 32px · 아이콘 20px (높이 단계 안의 값)
   i {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: var(--h-32);
+    height: var(--h-32);
     border-radius: 0.5rem;
     background: var(--brand);
     display: grid;
@@ -80,8 +81,8 @@
     flex: none;
 
     svg {
-      width: 1rem;
-      height: 1rem;
+      width: var(--h-20);
+      height: var(--h-20);
     }
   }
 }
