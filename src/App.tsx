@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { EmptyState } from './components/EmptyState';
 import { ExportModal } from './components/ExportModal';
 import { Header } from './components/Header';
@@ -8,12 +8,14 @@ import { PageAnalysisView } from './components/PageAnalysisView';
 import { PageDrawer } from './components/PageDrawer';
 import { PageHeader } from './components/PageHeader';
 import { PeriodNav } from './components/PeriodNav';
+import { SearchDialog } from './components/SearchDialog';
 import { Sidebar } from './components/Sidebar';
 import { YearView } from './components/YearView';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useRoute } from './hooks/useRoute';
 import { useTheme } from './hooks/useTheme';
 import type { ConvByKey, MetricKey, ShopTabKey, SiteId } from './types/analytics';
+import type { SearchAction } from './utils/search';
 import { parseRoute, routePath } from './utils/route';
 import { VIEW_DESC, VIEW_TITLES, YEAR_TITLE, yearDesc } from './utils/views';
 
@@ -53,9 +55,6 @@ function Dashboard({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: 
     resetRoute,
   } = useRoute(site, keys, years, data.months);
   const { isDark, toggleTheme } = useTheme();
-  // 단축키(Ctrl+K)는 한 번 등록한 이벤트에서 부르므로 최신 selectTab 을 ref 로 둔다
-  const selectTabRef = useRef(selectTab);
-  selectTabRef.current = selectTab;
 
   const [chartMetric, setChartMetric] = useState<MetricKey>('activeUsers');
   const [annMetric, setAnnMetric] = useState<MetricKey>('sessions');
@@ -63,6 +62,8 @@ function Dashboard({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: 
   const [convBy, setConvBy] = useState<ConvByKey>('byMedium');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  // 헤더 검색 창 (버튼 · Ctrl+K)
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // 슬라이드오버 Drawer 상태
   const [pageDrawerQuery, setPageDrawerQuery] = useState<string | null>(null);
@@ -78,10 +79,11 @@ function Dashboard({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setDrawerOpen(false);
-      // Ctrl+K (맥 ⌘K) — 헤더 검색 버튼과 같이 URL 분석으로 (ad-insight 검색 단축키와 같은 키)
+      // Ctrl+K (맥 ⌘K) — 헤더 검색 버튼과 같이 검색 창을 연다 (ad-insight 검색 단축키와 같은 키)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        selectTabRef.current('page');
+        setDrawerOpen(false);
+        setSearchOpen(true);
       }
     };
     const onResize = () => {
@@ -95,6 +97,25 @@ function Dashboard({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: 
       window.removeEventListener('resize', onResize);
     };
   }, []);
+
+  // 검색할 달 — URL 분석 중이면 그 달, 연간 화면이면 그 해에서 데이터가 있는 마지막 달, 아니면 보고 있는 달
+  const searchMonth = isPage
+    ? pageM || latestKey
+    : /^d{4}$/.test(sel)
+      ? [...keys].reverse().find((k) => k.startsWith(sel)) || latestKey
+      : sel || latestKey;
+
+  /** 검색 결과 고름 — 페이지·상품·카테고리·게시판은 URL 분석, 유입 매체·캠페인은 전환 분석의 그 표로 */
+  const handleSearchPick = (action: SearchAction, month: string) => {
+    setSearchOpen(false);
+    if (action.kind === 'page') {
+      handleOpenPage(action.query, month);
+    } else {
+      setConvBy(action.by);
+      if (sel !== month && !isPage) selectPeriod(month);
+      selectTab('conversion');
+    }
+  };
 
   const handleGoHome = () => {
     setConvBy('byMedium');
@@ -177,8 +198,8 @@ function Dashboard({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: 
           onOpenDrawer={() => setDrawerOpen(true)}
           onToggleTheme={toggleTheme}
           onSearch={() => {
-            selectTab('page');
             setDrawerOpen(false);
+            setSearchOpen(true);
           }}
           onExportExcel={handleExportExcel}
         />
@@ -253,6 +274,16 @@ function Dashboard({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: 
           </main>
         </div>
       </div>
+
+      {searchOpen && (
+        <SearchDialog
+          monthKey={searchMonth}
+          month={data.months[searchMonth]}
+          names={data.names}
+          onClose={() => setSearchOpen(false)}
+          onPick={handleSearchPick}
+        />
+      )}
 
       <ExportModal
         isOpen={exportModalOpen}

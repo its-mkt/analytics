@@ -8,7 +8,7 @@ interface HeaderProps {
   isDark: boolean;
   onOpenDrawer: () => void;
   onToggleTheme: () => void;
-  /** 헤더 검색 버튼 → URL 분석 */
+  /** 헤더 검색 버튼 → 검색 창 */
   onSearch: () => void;
   onExportExcel?: () => void;
 }
@@ -43,8 +43,8 @@ export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme,
         <Button
           className="ic top-search"
           id="btnSearch"
-          aria-label="URL 분석 검색"
-          title="URL 분석 (Ctrl+K)"
+          aria-label="검색"
+          title="검색 (Ctrl+K)"
           onClick={onSearch}
           icon={<Search size={18} aria-hidden="true" />}
         />
