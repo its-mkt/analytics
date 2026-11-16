@@ -531,6 +531,7 @@ function doGet(e) {
   try {
     if (mode === 'live') body = liveNow_();
     else if (mode === 'page') body = pageStats_(e.parameter.q, e.parameter.month);
+    else if (mode === 'oncore') body = Object.assign({ site: 'oncore' }, loadOncore_());   // 온코어 GA4 (ad-insight 대시보드용, 아래 collectOncore). site 로 아이티켓 응답과 구분한다
     else if (mode === 'cur') {
       const store = load_(), cur = todayKst_().slice(0, 7), prev = addMonth_(cur, -1);
       const months = {};
@@ -598,4 +599,96 @@ function checkInternalFilter() {
     } catch (e) { out.push('-- ' + dim + ' 조회 실패: ' + String((e && e.message) || e).slice(0, 120)); }
   });
   Logger.log(out.join('\n'));
+}
+
+/* ── 온코어 GA4 (ad-insight 대시보드의 온코어 기기별 통계·구매 상세용) ──
+ * 아이티켓 수집(CFG · q_ · collectMonth_ · collectAll)과 따로 돈다. 속성·저장 파일·트리거가 모두 달라 실패해도 아이티켓 데이터에 영향이 없다.
+ * 온코어는 견적 완료 화면이 없어(제출 후 알림 → 목록으로 이동) 견적 전환은 세지 않고, 주문 완료 화면만 전환으로 센다.
+ * 처음 한 번: 에디터에서 collectOncore 실행(과거 월 채움) → setupOncoreTrigger 실행(3시간마다 당월·전월 갱신).
+ * 대시보드는 웹앱 ?mode=oncore 로 받는다 (doGet). 웹앱은 "배포 관리 → 새 버전"으로 다시 배포해야 이 모드가 생긴다.
+ */
+const ONCORE = {
+  PROPERTY_ID: '544861334',               // GA4 속성 'on-core' (스트림 '온코어(주)' https://on-core.co.kr)
+  START_MONTH: '2025-01',                 // 이 달부터 묻는다. 측정 전 달은 세션 0 으로 저장되고 대시보드는 '측정 전'으로 본다
+  FILE_NAME: 'oncore-analytics-data.json',
+  SCHEMA: 1,                              // 수집 항목이 바뀌면 올린다 → 과거 월을 다시 채움
+  ORDER_PATH: '/order/order_end.php',     // 주문 완료 화면 (고도몰 공통)
+  BUDGET_MS: 3 * 60 * 1000,
+};
+function oq_(dims, metrics, range, extra) {
+  const req = Object.assign({ dateRanges: [range], dimensions: dims.map((name) => ({ name })), metrics: metrics.map((name) => ({ name })), limit: 1000 }, extra || {});
+  return rows_(AnalyticsData.Properties.runReport(req, 'properties/' + ONCORE.PROPERTY_ID));
+}
+/** 한 달 치: 방문(기기·기기×채널)과 주문 완료 세션(기기·기기×채널·출처/매체). 형식은 아이티켓 월별 파일(devices·deviceChannels·conv.by*)과 같다 */
+function oncoreMonth_(m, today) {
+  const range = { startDate: m + '-01', endDate: m === today.slice(0, 7) ? today : lastDay_(m) };
+  const bySessions = { orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 500 };
+  const orderOnly = Object.assign({ dimensionFilter: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'EXACT', value: ONCORE.ORDER_PATH } } } }, bySessions);
+  // 주문 완료 화면을 본 세션 — k 는 'mobile' · 'mobile | Paid Search' · 'google / cpc'
+  const conv = (dims) => {
+    const acc = {};
+    oq_(['pagePath'].concat(dims), ['sessions'], range, orderOnly).forEach((r) => {
+      const k = dims.map((d) => r[d]).join(' | ');
+      acc[k] = (acc[k] || 0) + r.sessions;
+    });
+    return Object.keys(acc).map((k) => ({ k: k, s: acc[k] })).sort((a, b) => b.s - a.s);
+  };
+  const t = oq_([], ['sessions', 'activeUsers'], range)[0] || {};
+  return {
+    v: ONCORE.SCHEMA,
+    month: m,
+    partial: m === today.slice(0, 7),
+    updated: new Date().toISOString(),
+    total: { sessions: t.sessions || 0, activeUsers: t.activeUsers || 0 },
+    daily: oq_(['date'], ['sessions'], range, { orderBys: [{ dimension: { dimensionName: 'date' } }] }).map((r) => ({ date: ymd_(r.date), sessions: r.sessions })),
+    devices: oq_(['deviceCategory'], ['activeUsers', 'sessions'], range, bySessions),
+    deviceChannels: oq_(['deviceCategory', 'sessionDefaultChannelGroup'], ['sessions', 'activeUsers', 'engagedSessions'], range, bySessions),
+    conv: {
+      defs: [{ id: 'order', name: '주문 완료', path: ONCORE.ORDER_PATH }],
+      byDevice: { order: conv(['deviceCategory']) },
+      byDeviceChannel: { order: conv(['deviceCategory', 'sessionDefaultChannelGroup']) },
+      byMedium: { order: conv(['sessionSourceMedium']) },
+    },
+  };
+}
+// 이름이 아니라 ID 로 연다 (같은 이름의 사본·바로가기를 잡지 않게). 처음 수집할 때 만들고 ID 를 스크립트 속성 ONCORE_FILE_ID 에 둔다
+function oncoreFile_(create) {
+  const props = PropertiesService.getScriptProperties(), id = props.getProperty('ONCORE_FILE_ID');
+  if (id) return DriveApp.getFileById(id);
+  if (!create) return null;
+  const f = DriveApp.createFile(ONCORE.FILE_NAME, '{"months":{}}', MimeType.PLAIN_TEXT);
+  props.setProperty('ONCORE_FILE_ID', f.getId());
+  return f;
+}
+// 파일을 못 읽으면 오류를 낸다 — 빈 값으로 넘어가 다음 저장 때 수집본을 덮어쓰지 않게 (아직 만들기 전이면 빈 값)
+function loadOncore_() {
+  const f = oncoreFile_(false);
+  if (!f) return { months: {} };
+  const text = f.getBlob().getDataAsString();
+  return text.trim() ? JSON.parse(text) : { months: {} };
+}
+/** 3시간마다: 당월·전월은 항상 새로, 빠진/구버전 과거 월은 시간 되는 만큼 채운다 */
+function collectOncore() {
+  const started = Date.now(), today = todayKst_(), cur = today.slice(0, 7), prev = addMonth_(cur, -1);
+  const store = loadOncore_();
+  store.months = store.months || {};
+  const all = [];
+  for (let m = ONCORE.START_MONTH; m <= cur; m = addMonth_(m, 1)) all.push(m);
+  const stale = (m) => !store.months[m] || store.months[m].v !== ONCORE.SCHEMA;
+  const queue = [cur, prev].filter((m) => all.indexOf(m) >= 0).concat(all.filter((m) => m !== cur && m !== prev && stale(m)));
+  const errors = [];
+  for (const m of queue) {
+    if (Date.now() - started > ONCORE.BUDGET_MS) break;   // 남은 달은 다음 실행에서 이어서
+    try { store.months[m] = oncoreMonth_(m, today); }
+    catch (e) { errors.push(m + ': ' + e.message); if (/Exhausted|quota/i.test(String(e.message))) break; }
+  }
+  store.updated = new Date().toISOString();
+  store.errors = errors;
+  oncoreFile_(true).setContent(JSON.stringify(store));
+  if (errors.length) throw new Error(errors.join('\n'));   // 실행 기록에 실패로 남김
+}
+/** 한 번만 실행: collectOncore 3시간 트리거. 다시 실행해도 중복되지 않는다 (아이티켓 트리거는 건드리지 않음) */
+function setupOncoreTrigger() {
+  ScriptApp.getProjectTriggers().filter((t) => t.getHandlerFunction() === 'collectOncore').forEach((t) => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('collectOncore').timeBased().everyHours(3).create();
 }

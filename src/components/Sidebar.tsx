@@ -11,10 +11,10 @@ import { Dropdown, type DropdownOption } from './Dropdown';
 
 type DashboardId = 'ad-insight' | 'analytics';
 
-/** 브랜드 선택 박스로 오가는 대시보드 — 개발 서버에서는 각 프로젝트의 로컬 서버, 배포본에서는 운영 주소로 간다 (its-ad-insight 사이드바와 같은 목록) */
+/** 브랜드 선택 박스로 오가는 대시보드 — 개발 서버에서는 각 프로젝트의 로컬 서버, 배포본에서는 운영 주소로 간다 (ad-insight 사이드바와 같은 목록) */
 const DASHBOARDS: { id: DashboardId; label: string; local: string; live: string }[] = [
-  { id: 'ad-insight', label: 'its-ad-insight', local: 'http://localhost:2000/ad-insight/', live: 'https://its.itket.com/ad-insight/' },
-  { id: 'analytics', label: 'its-analytics', local: 'http://localhost:1000/', live: 'https://its.itket.com/analytics/' },
+  { id: 'ad-insight', label: 'ad-insight', local: 'http://localhost:2000/ad-insight/', live: 'https://its.itket.com/ad-insight/' },
+  { id: 'analytics', label: 'analytics', local: 'http://localhost:1000/', live: 'https://its.itket.com/analytics/' },
 ];
 const DASHBOARD_OPTIONS: DropdownOption<DashboardId>[] = DASHBOARDS.map((d) => ({ value: d.id, label: d.label, title: import.meta.env.DEV ? d.local : d.live }));
 const goDashboard = (id: DashboardId) => {
@@ -58,7 +58,7 @@ export function Sidebar({
           <X size={18} aria-hidden="true" />
         </button>
 
-        {/* 브랜드: 아이콘은 처음 화면으로, 이름은 대시보드 선택 박스 (its-ad-insight ↔ its-analytics) */}
+        {/* 브랜드: 아이콘은 처음 화면으로, 이름은 대시보드 선택 박스 (ad-insight ↔ analytics) */}
         <div className="brand" id="brand">
           <a
             className="brand-home"
