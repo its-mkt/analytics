@@ -296,19 +296,32 @@
   }
 }
 
-// 실제 KPI 카드 안에서 값만 늦게 오는 동안 (KpiCardsGrid item.loading) — 값·배지 자리 크기
+// 실제 KPI 카드 안에서 값만 늦게 오는 동안 (KpiCardsGrid item.loading)
+// 막대는 실제 줄(.kpi-value · 증감 뱃지 · .kpi-detail) 안에 들어가 줄 높이를 그대로 쓴다 — 로딩 전후 카드 높이가 같다
 .kpi {
   .kpi-skel-val {
-    display: block;
-    width: 3.25rem;
-    height: 2.75rem;
-    border-radius: 0.25rem;
+    display: inline-block;
+    vertical-align: middle;
+    width: 4.5rem;
+    height: var(--h-32); // 큰 값(1.875rem) 글자 높이쯤
+    border-radius: 0.375rem;
   }
 
-  .kpi-skel-sub {
-    display: block;
-    width: 4.5rem;
-    height: 0.625rem;
+  // 증감 뱃지·아래 줄 자리: 실제 부품(.delta · .kpi-detail)에 보이지 않는 글자를 넣어 높이·기준선을 그대로 쓴다
+  .kpi-skel-delta,
+  .kpi-skel-detail {
+    color: transparent;
+    white-space: nowrap;
+  }
+
+  .kpi-skel-delta {
+    display: inline-flex; // .skel 의 block 을 되돌린다 — .delta 와 같은 줄 배치
+    vertical-align: top; // 실제 뱃지는 화살표가 아이콘이라 기준선이 달라 1px 어긋난다 — 줄 위에 맞춘다
+    border-radius: var(--radius-btn);
+  }
+
+  .kpi-skel-detail {
+    display: inline-block;
     border-radius: 0.1875rem;
   }
 }

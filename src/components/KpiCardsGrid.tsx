@@ -56,12 +56,19 @@ function KpiBody({ item }: { item: KpiItem }) {
           </>
         )}
       </div>
+      {/* 로딩 중에도 실제 카드와 같은 세 줄(값 · 증감 뱃지 · 아래 줄)을 같은 자리·높이로 — 값이 들어와도 카드가 커지지 않는다 */}
       {item.loading ? (
-        <Skeleton className="kpi-skel-sub" />
+        // 실제 증감 뱃지(.delta)와 같은 부품에 보이지 않는 글자를 넣어 같은 크기·기준선으로 — 막대 모양만 보인다
+        <span className="skel delta kpi-skel-delta" aria-hidden="true">↓ 00.0% 전월</span>
       ) : item.cmpLabel ? (
         <DeltaBadge cur={item.cur} prev={item.prev} label={item.cmpLabel} emptyText={`${item.cmpLabel} 값 없음`} />
       ) : (
         item.badge
+      )}
+      {item.loading && (
+        <div className="kpi-detail" aria-hidden="true">
+          <span className="skel kpi-skel-detail">이름 00 | 이름 00</span>
+        </div>
       )}
       {!item.loading && item.detail && item.detail.length > 0 && (
         <div className="kpi-detail">
