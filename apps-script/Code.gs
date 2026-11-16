@@ -651,11 +651,22 @@ function oncoreMonth_(m, today) {
     },
   };
 }
-function oncoreFile_() {
-  const it = DriveApp.getFilesByName(ONCORE.FILE_NAME);
-  return it.hasNext() ? it.next() : DriveApp.createFile(ONCORE.FILE_NAME, '{"months":{}}', MimeType.PLAIN_TEXT);
+// 이름이 아니라 ID 로 연다 (같은 이름의 사본·바로가기를 잡지 않게). 처음 수집할 때 만들고 ID 를 스크립트 속성 ONCORE_FILE_ID 에 둔다
+function oncoreFile_(create) {
+  const props = PropertiesService.getScriptProperties(), id = props.getProperty('ONCORE_FILE_ID');
+  if (id) return DriveApp.getFileById(id);
+  if (!create) return null;
+  const f = DriveApp.createFile(ONCORE.FILE_NAME, '{"months":{}}', MimeType.PLAIN_TEXT);
+  props.setProperty('ONCORE_FILE_ID', f.getId());
+  return f;
 }
-function loadOncore_() { try { return JSON.parse(oncoreFile_().getBlob().getDataAsString()); } catch (e) { return { months: {} }; } }
+// 파일을 못 읽으면 오류를 낸다 — 빈 값으로 넘어가 다음 저장 때 수집본을 덮어쓰지 않게 (아직 만들기 전이면 빈 값)
+function loadOncore_() {
+  const f = oncoreFile_(false);
+  if (!f) return { months: {} };
+  const text = f.getBlob().getDataAsString();
+  return text.trim() ? JSON.parse(text) : { months: {} };
+}
 /** 3시간마다: 당월·전월은 항상 새로, 빠진/구버전 과거 월은 시간 되는 만큼 채운다 */
 function collectOncore() {
   const started = Date.now(), today = todayKst_(), cur = today.slice(0, 7), prev = addMonth_(cur, -1);
@@ -673,7 +684,7 @@ function collectOncore() {
   }
   store.updated = new Date().toISOString();
   store.errors = errors;
-  oncoreFile_().setContent(JSON.stringify(store));
+  oncoreFile_(true).setContent(JSON.stringify(store));
   if (errors.length) throw new Error(errors.join('\n'));   // 실행 기록에 실패로 남김
 }
 /** 한 번만 실행: collectOncore 3시간 트리거. 다시 실행해도 중복되지 않는다 (아이티켓 트리거는 건드리지 않음) */
