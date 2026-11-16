@@ -142,7 +142,6 @@ export function LivePanel({ liveUrl }: LivePanelProps) {
   return (
     <div id="liveBox">
       <section className="live" id="livePanel" aria-label="실시간 접속 현황">
-        <LiveToggle open onClick={toggleCollapsed} />
         <div className="live-stat" id="liveStatBox">
           <div className="label live-head">
             <span className={`dot${live.stale ? ' off' : ''}`} />
@@ -179,7 +178,11 @@ export function LivePanel({ liveUrl }: LivePanelProps) {
         </div>
 
         <div className="live-pages" id="livePagesBox">
-          <div className="label live-head">지금 보는 페이지</div>
+          {/* 머리줄: 제목 … 접기 버튼 (접힌 줄의 '자세히 보기'와 같은 오른쪽 끝) */}
+          <div className="label live-head live-head-row">
+            <span>지금 보는 페이지</span>
+            <LiveToggle open onClick={toggleCollapsed} />
+          </div>
           <ul>
             {(live.pages || []).length > 0 ? (
               (live.pages || []).slice(0, 5).map((r, idx) => (
@@ -202,13 +205,13 @@ export function LivePanel({ liveUrl }: LivePanelProps) {
   );
 }
 
-/** 실시간 상자 펼치기/접기 버튼 — 접힌 줄에서는 '자세히 보기', 펼친 상자 오른쪽 위에서는 '접기' */
+/** 실시간 상자 펼치기/접기 버튼 — 접힌 줄 오른쪽 끝에서는 '자세히 보기', 펼친 상자에서는 '지금 보는 페이지' 머리줄 오른쪽 끝의 '접기' */
 function LiveToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
   const label = open ? '실시간 패널 접기' : '실시간 접속 현황 자세히 보기';
   return (
     <button
       type="button"
-      className={open ? 'btn-live-toggle live-toggle-abs' : 'btn-live-toggle'}
+      className="btn-live-toggle"
       onClick={onClick}
       aria-label={label}
       aria-expanded={open}

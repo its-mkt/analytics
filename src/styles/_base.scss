@@ -220,7 +220,7 @@ textarea:focus-visible {
 .toggle {
   position: relative;
   width: var(--h-64);
-  height: var(--h-40);
+  height: var(--h-32);
   border: 1px solid var(--line2);
   border-radius: 9999px;
   background: var(--side);
@@ -268,8 +268,8 @@ textarea:focus-visible {
     position: absolute;
     top: 3px;
     left: 3px;
-    width: var(--h-32);
-    height: var(--h-32);
+    width: var(--h-24);
+    height: var(--h-24);
     border-radius: 50%;
     background: #ffffff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16), 0 1px 2px rgba(0, 0, 0, 0.08);
@@ -295,7 +295,7 @@ textarea:focus-visible {
 
     i,
     .toggle-thumb {
-      transform: translateX(1.5rem);
+      transform: translateX(2rem); // 안쪽 폭 62px − 손잡이 24px − 양쪽 간격 6px
       background: #1e2029;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
     }
