@@ -10,14 +10,14 @@ interface MonthViewSkeletonProps {
 
 /**
  * 월 화면 로딩 모양. 화면 머리말은 App 이 항상 그리므로 여기서는 본문만.
- * 종합 요약: KPI 6장(온코어 5) + 일별 추이 + 분석 각주 / 전환 분석: 전환 KPI 3장(온코어 2) + 전환 표 / 페이지·상품: 인기 페이지 표 + 고도몰 표
+ * 종합 요약: KPI 4장 + 일별 추이 + 분석 각주 / 전환 분석: 전환 KPI 3장(온코어 2) + 전환 표 / 페이지·상품: 인기 페이지 표 + 고도몰 표
  */
 export function MonthViewSkeleton({ tab, hasEstimate }: MonthViewSkeletonProps) {
   return (
     <div className="dashboard-skel" aria-busy="true" aria-label="월별 데이터 로딩 중">
       {tab === 'overview' && (
         <>
-          <SkeletonKpiCards count={hasEstimate ? 6 : 5} />
+          <SkeletonKpiCards count={4} />
           <SkeletonChartCard barCount={30} />
           <SkeletonTableCard rowCount={4} />
         </>

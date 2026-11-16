@@ -11,7 +11,6 @@ import { fmt, pct } from '../utils/format';
 import { CONV_BY, godoCount } from '../utils/metrics';
 import { CardHeader } from './CardHeader';
 import { Card } from './Card';
-import { DeltaBadge } from './DeltaBadge';
 import { KpiCardsGrid } from './KpiCardsGrid';
 import { ProgressBar } from './ProgressBar';
 import { SegmentedControl } from './SegmentedControl';
@@ -234,25 +233,26 @@ export function ConversionSection({
               : null;
 
           const name = getDefShortName(d);
+          // 실데이터(시트·회원 DB)가 있는 지표인데 연동이 실패하면 GA4 완료화면 세션으로 대신하고 아래 줄에 기준을 적는다
+          const fallback = (isEstimate || isSignup) && actualCount == null;
+          const detail: Array<[string, string | number]> = fallback
+            ? [['기준', 'GA4 완료화면']]
+            : cats
+              ? Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 3)
+              : [];
 
           return {
-            label: !isLoading && actualCount != null ? `${name} (실제 접수)` : name,
+            label: `${+monthData.month.slice(5)}월 ${name}${monthData.partial ? ' (진행 중)' : ''}`,
             value: cur,
+            unit: '건',
             loading: isLoading,
-            badge:
-              pv != null ? (
-                <DeltaBadge cur={cur} prev={pv} label="전월" />
-              ) : null,
-            sub:
-              actualCount != null ? (
-                cats ? (
-                  <div className="label sub1 sub-top sub-cats">
-                    {Object.entries(cats)
-                      .map(([k, v]) => `${k} ${v}`)
-                      .join(' · ')}
-                  </div>
-                ) : null
-              ) : null,
+            cur,
+            prev: pv ?? null,
+            cmpLabel: '전월',
+            detail,
+            title: actualCount != null
+              ? (isEstimate ? '견적문의 시트 실접수 기준' : '고도몰 회원 DB 가입일 기준')
+              : 'GA4 완료화면을 본 세션 기준',
           };
         })}
       />
@@ -261,7 +261,7 @@ export function ConversionSection({
       {(godoQuotes || godoSignups) && (
       <p className="conv-note">
         견적 요청은 고도몰 견적문의 시트(접수날짜 열), 회원가입은 고도몰 회원 DB(가입일) 기준이며 15분 캐시로 조회합니다.
-        카드 제목에 "(실제 접수)"가 없으면 연동 실패로 GA4 완료화면 세션(가입은 마지막 저장된 월 합계)을 대신 표시한 것입니다.
+        연동이 실패하면 GA4 완료화면 세션(가입은 마지막 저장된 월 합계)을 대신 보여 주고, 그때는 카드 아래 줄에 "기준 GA4 완료화면"이 표시됩니다.
       </p>
       )}
 
