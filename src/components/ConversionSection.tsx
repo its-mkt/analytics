@@ -9,10 +9,13 @@ import type {
 } from '../types/analytics';
 import { fmt, pct } from '../utils/format';
 import { CONV_BY, convDaily, godoCount } from '../utils/metrics';
+import { CardHeader } from './CardHeader';
 import { DeltaBadge } from './DeltaBadge';
 import { KpiCardsGrid } from './KpiCardsGrid';
 import { ProgressBar } from './ProgressBar';
 import { SegmentedControl } from './SegmentedControl';
+import { TableFoot } from './TableFoot';
+import { TableWrap } from './TableWrap';
 
 interface ConversionSectionProps {
   monthData: MonthData;
@@ -238,8 +241,10 @@ export function ConversionSection({
               ? godoQuotes.byCategory[monthData.month]
               : null;
 
+          const name = getDefShortName(d);
+
           return {
-            label: !isLoading && actualCount != null ? `${getDefShortName(d)} (실제 접수)` : getDefShortName(d),
+            label: !isLoading && actualCount != null ? `${name} (실제 접수)` : name,
             value: cur,
             loading: isLoading,
             badge:
@@ -280,7 +285,7 @@ export function ConversionSection({
         })}
       />
 
-      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)', margin: '-0.25rem 0 0.75rem', lineHeight: 1.5 }}>
+      <p style={{ fontSize: '0.72rem', color: 'var(--sub)', margin: '-0.25rem 0 0.75rem', lineHeight: 1.5 }}>
         견적 요청은 고도몰 견적문의 시트(접수날짜 열), 회원가입은 고도몰 회원 DB(가입일) 기준이며 15분 캐시로 조회합니다.
         카드 제목에 "(실제 접수)"가 없으면 연동 실패로 GA4 완료화면 세션(가입은 마지막 저장된 월 합계)을 대신 표시한 것입니다.
       </p>
@@ -290,120 +295,120 @@ export function ConversionSection({
         id="sectionConversion"
         aria-labelledby="headingConversion"
       >
-        <div className="card-head-bar">
-          <h2 id="headingConversion">
-            <span>전환 분석</span>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 400,
-                color: 'var(--text-muted, #64748b)',
-                marginLeft: '8px',
-              }}
-            >
-              (유입 경로별 추적은 GA4 웹 세션 기준)
-            </span>
-          </h2>
-          <SegmentedControl
-            items={CONV_BY}
-            value={convBy}
-            onChange={onChangeConvBy}
-          />
-        </div>
+        <CardHeader
+          id="headingConversion"
+          title={
+            <>
+              <span>전환 분석</span>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 400,
+                  color: 'var(--text-muted, #64748b)',
+                  marginLeft: '8px',
+                }}
+              >
+                (유입 경로별 추적은 GA4 웹 세션 기준)
+              </span>
+            </>
+          }
+          actions={
+            <SegmentedControl
+              items={CONV_BY}
+              value={convBy}
+              onChange={onChangeConvBy}
+            />
+          }
+        />
 
-        <div className="tw">
-          {rows.length > 0 ? (
-            <table>
-              <thead>
-                <tr>
-                  <th className="th-entity">{colHeader}</th>
-                  <th className="n th-stat th-traffic">세션</th>
-                  {isSourceBased && <th className="n hm th-stat th-traffic">방문자</th>}
-                  {defs.map((d) => (
-                    <th
-                      key={d.id}
-                      className="n th-stat th-conv"
-                      title={`${d.name} (${d.path})`}
-                    >
-                      {getDefShortName(d)}
-                    </th>
-                  ))}
-                  <th className="n th-stat th-conv-total">전체 전환</th>
-                  <th className="n th-stat th-rate">전환율</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => {
-                  const q = getRowQuery(r);
-                  const barVal = isSourceBased ? r.n : r.totalConv;
-                  return (
-                    <tr
-                      key={r.k}
-                      className={clickable ? 'go' : ''}
-                      onClick={clickable && q ? () => onOpenPage(q) : undefined}
-                    >
-                      <td className="td-entity">
-                        <span className="tx" title={r.k}>
-                          {renderRowName(r)}
-                        </span>
-                        <ProgressBar value={barVal} max={mx} />
+        <TableWrap
+          isEmpty={rows.length === 0}
+          empty={
+            !c
+              ? '이 달은 GA4 유입 경로별 세션 전환 수집(2026년 8월 도입) 이전 기간입니다. 상단 고도몰 DB 실접수 건수를 참고해 주세요.'
+              : '이 기준으로 집계된 전환이 없습니다.'
+          }
+          emptyStyle={{ padding: '2.5rem 1rem', textAlign: 'center' }}
+        >
+          <table>
+            <thead>
+              <tr>
+                <th className="th-entity">{colHeader}</th>
+                <th className="n th-stat th-traffic">세션</th>
+                {isSourceBased && <th className="n hm th-stat th-traffic">방문자</th>}
+                {defs.map((d) => (
+                  <th
+                    key={d.id}
+                    className="n th-stat th-conv"
+                    title={`${d.name} (${d.path})`}
+                  >
+                    {getDefShortName(d)}
+                  </th>
+                ))}
+                <th className="n th-stat th-conv-total">전체 전환</th>
+                <th className="n th-stat th-rate">전환율</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const q = getRowQuery(r);
+                const barVal = isSourceBased ? r.n : r.totalConv;
+                return (
+                  <tr
+                    key={r.k}
+                    className={clickable ? 'go' : ''}
+                    onClick={clickable && q ? () => onOpenPage(q) : undefined}
+                  >
+                    <td className="td-entity">
+                      <span className="tx" title={r.k}>
+                        {renderRowName(r)}
+                      </span>
+                      <ProgressBar value={barVal} max={mx} />
+                    </td>
+                    <td className="n td-stat th-traffic">{fmt(r.n)}</td>
+                    {isSourceBased && (
+                      <td className="n hm td-stat th-traffic">
+                        {r.u != null ? fmt(r.u) : '-'}
                       </td>
-                      <td className="n td-stat th-traffic">{fmt(r.n)}</td>
-                      {isSourceBased && (
-                        <td className="n hm td-stat th-traffic">
-                          {r.u != null ? fmt(r.u) : '-'}
+                    )}
+                    {defs.map((d) => {
+                      const val = r.convs[d.id] || 0;
+                      return (
+                        <td key={d.id} className="n td-stat th-conv">
+                          {val > 0 ? (
+                            <span className="conv-num active">{fmt(val)}</span>
+                          ) : (
+                            <span className="conv-num zero">0</span>
+                          )}
                         </td>
+                      );
+                    })}
+                    <td className="n td-stat th-conv-total">
+                      {r.totalConv > 0 ? (
+                        <span className="conv-total-pill">{fmt(r.totalConv)}</span>
+                      ) : (
+                        <span className="conv-num zero">0</span>
                       )}
-                      {defs.map((d) => {
-                        const val = r.convs[d.id] || 0;
-                        return (
-                          <td key={d.id} className="n td-stat th-conv">
-                            {val > 0 ? (
-                              <span className="conv-num active">{fmt(val)}</span>
-                            ) : (
-                              <span className="conv-num zero">0</span>
-                            )}
-                          </td>
-                        );
-                      })}
-                      <td className="n td-stat th-conv-total">
-                        {r.totalConv > 0 ? (
-                          <span className="conv-total-pill">{fmt(r.totalConv)}</span>
-                        ) : (
-                          <span className="conv-num zero">0</span>
-                        )}
-                      </td>
-                      <td className="n td-stat th-rate rate">
-                        {r.totalConv > 0 ? (
-                          <span className="rate-badge">{pct(r.totalConv, r.n)}</span>
-                        ) : (
-                          <span className="rate-zero">0.0%</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          ) : (
-            <div className="empty" style={{ padding: '2.5rem 1rem', textAlign: 'center' }}>
-              {!c
-                ? '이 달은 GA4 유입 경로별 세션 전환 수집(2026년 8월 도입) 이전 기간입니다. 상단 고도몰 DB 실접수 건수를 참고해 주세요.'
-                : '이 기준으로 집계된 전환이 없습니다.'}
-            </div>
-          )}
-        </div>
+                    </td>
+                    <td className="n td-stat th-rate rate">
+                      {r.totalConv > 0 ? (
+                        <span className="rate-badge">{pct(r.totalConv, r.n)}</span>
+                      ) : (
+                        <span className="rate-zero">0.0%</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </TableWrap>
 
-        <div className="tbl-foot">
-          <div className="foot-left">
-            <b>전환</b> 목표 화면 도달 세션(견적·가입·주문) ·{' '}
-            <b>전환율</b> 전환 세션 ÷ 전체 세션 · <b>랜딩·상품</b> 첫 진입 기준
-            {clickable ? ' · 행 클릭 시 상세 분석 이동' : ''}
-          </div>
-          <div className="foot-right">
-            단위: 세션·%
-          </div>
-        </div>
+        <TableFoot unit="단위: 세션·%">
+          <b>전환</b> 목표 화면 도달 세션(견적·가입·주문) ·{' '}
+          <b>전환율</b> 전환 세션 ÷ 전체 세션 · <b>랜딩·상품</b> 첫 진입 기준
+          {clickable ? ' · 행 클릭 시 상세 분석 이동' : ''}
+        </TableFoot>
       </section>
     </>
   );

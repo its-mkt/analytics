@@ -14,9 +14,11 @@ import { ConversionSection } from './ConversionSection';
 import { MonthViewSkeleton } from './DashboardSkeleton';
 import { InternalFilterNote } from './InternalFilterNote';
 import { MonthKpiCards } from './MonthKpiCards';
+import { Note } from './Note';
 import { PopularPagesCard } from './PopularPagesCard';
 import { SegmentedControl } from './SegmentedControl';
 import { ShopCard } from './ShopCard';
+import { Tag } from './Tag';
 import { WhyCard } from './WhyCard';
 import { SourceNotice, storeSource, type SourceLinkItem } from './SourceNotice';
 
@@ -85,8 +87,8 @@ export function MonthView({
       <InternalFilterNote internal={internal} monthKey={monthKey} />
 
       {(startDay > 0 || prevStartDay > 0) && (
-        <div className="note flex-note" id="noteLateStart">
-          <span className="tag warn">수집 시작</span>
+        <Note className="flex-note">
+          <Tag tone="warn">수집 시작</Tag>
           <span>
             {startDay > 0 ? (
               <>
@@ -98,7 +100,7 @@ export function MonthView({
               </>
             )}
           </span>
-        </div>
+        </Note>
       )}
 
       {/* 1. 종합 요약 (overview): KPI 요약 카드 + 일별 추이 차트 + 분석 각주 */}

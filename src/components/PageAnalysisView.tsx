@@ -1,22 +1,15 @@
 import { useEffect, useState } from 'react';
 import { usePageAnalysis } from '../hooks/usePageAnalysis';
-import type {
-  MonthData,
-  NamesMap,
-  PageAnalysisResult,
-} from '../types/analytics';
+import type { MonthData, NamesMap } from '../types/analytics';
 import { fmt } from '../utils/format';
-import { isGap, SUSP_MIN_PV, SUSP_RATIO } from '../utils/metrics';
-import {
-  buildPageDailySeries,
-  buildPageKpis,
-} from '../utils/pageAnalysis';
-import { DailyChart } from './BarChart';
-import { KpiCardsGrid } from './KpiCardsGrid';
-import { PageAnalysisDetails } from './PageAnalysisDetails';
+import { isGap } from '../utils/metrics';
+import { EmptyState } from './EmptyState';
+import { Note } from './Note';
+import { PageAnalysisResult } from './PageAnalysisResult';
 import { PageAnalysisSkeleton } from './PageAnalysisSkeleton';
 import { PageSearchCard } from './PageSearchCard';
 import { SourceNotice, storeSource, type SourceLinkItem } from './SourceNotice';
+import { TableWrap } from './TableWrap';
 
 const pageSources = (siteUrl: string): SourceLinkItem[] => [
   { label: 'Google Analytics 4 API', href: 'https://analytics.google.com/' },
@@ -79,84 +72,13 @@ export function PageAnalysisView({
         ] as const,
     );
 
-  const renderResult = (r: PageAnalysisResult) => {
-    const t = r.total || {};
-    const views = t.screenPageViews || 0;
-    const rMonth = r.month || pageM;
-    if (!views) {
-      return (
-        <div className="card">
-          <div className="empty">
-            “{r.q || pageQ}” 이(가) 포함된 페이지의 {rMonth} 조회 기록이 없습니다.
-            <br />
-            주소 일부나 상품번호를 확인해 보세요.
-          </div>
-        </div>
-      );
-    }
-
-    const { dates, views: sv } = buildPageDailySeries(r, rMonth);
-    const ratio = t.activeUsers ? views / t.activeUsers : 0;
-    const kpiItems = buildPageKpis(r);
-
-    const ago = r.at
-      ? Math.max(0, Math.round((Date.now() - new Date(r.at).getTime()) / 60000))
-      : 0;
-
-    return (
-      <>
-        {ratio > SUSP_RATIO && views > SUSP_MIN_PV && (
-          <div className="note">
-            ⚠ 방문자 1명당 조회수가 {ratio.toFixed(1)}배입니다. 내부 새로고침·자동 접속일 수 있습니다(회사 IP 제외 설정 전 데이터에는 직원 접속이 섞여 있습니다).
-          </div>
-        )}
-        {(r.errors || []).length > 0 && (
-          <div className="note">
-            일부 항목을 가져오지 못했습니다: {(r.errors || []).join(' / ')}
-          </div>
-        )}
-
-        <KpiCardsGrid
-          id="kpisPageAnalysis"
-          ariaLabel="페이지 분석 핵심 지표"
-          items={kpiItems}
-        />
-
-        <section
-          className="card card-page-daily-views"
-          id="sectionPageDailyViews"
-          aria-labelledby="headingPageDailyViews"
-        >
-          <h2 id="headingPageDailyViews">
-            <span>
-              일별 조회수 — “{r.q || pageQ}”{' '}
-              <span className="sub-title">
-                {rMonth}
-                {r.partial ? ' (진행 중)' : ''} ·{' '}
-                {ago < 1 ? '방금' : `${ago}분 전`} 조회
-              </span>
-            </span>
-          </h2>
-          <DailyChart vals={sv} dates={dates} unit="" />
-        </section>
-
-        <PageAnalysisDetails
-          result={r}
-          currentMonth={rMonth}
-          query={pageQ}
-          onOpenPage={onOpenPage}
-        />
-      </>
-    );
-  };
-
   let bodyContent: React.ReactNode = null;
   if (!pageQ) {
     bodyContent = (
       <section className="card card-empty" id="sectionPageEmpty">
-        <div className="empty">
+        <EmptyState>
           위에서 페이지를 고르거나 주소·상품번호를 입력해 조회하세요.
-        </div>
+        </EmptyState>
       </section>
     );
   } else if (pageBusy || !pageRes) {
@@ -168,9 +90,9 @@ export function PageAnalysisView({
     const has = fallbackSeries.some((r) => r.views != null);
     bodyContent = (
       <section className="card card-page-fallback" id="sectionPageFallback">
-        <div className="note mb-sm">{why}</div>
+        <Note className="mb-sm">{why}</Note>
         {has ? (
-          <div className="tw">
+          <TableWrap>
             <table>
               <thead>
                 <tr>
@@ -191,14 +113,22 @@ export function PageAnalysisView({
                   ))}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         ) : (
-          <div className="empty">저장된 상위 페이지에 없는 주소입니다.</div>
+          <EmptyState>저장된 상위 페이지에 없는 주소입니다.</EmptyState>
         )}
       </section>
     );
   } else {
-    bodyContent = renderResult(pageRes);
+    bodyContent = (
+      <PageAnalysisResult
+        result={pageRes}
+        query={pageQ}
+        fallbackMonth={pageM}
+        variant="page"
+        onOpenPage={onOpenPage}
+      />
+    );
   }
 
   return (

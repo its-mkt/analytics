@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChartWidth } from '../hooks/useChartWidth';
 import { axisC, fmt, fmtC } from '../utils/format';
+import { EmptyState } from './EmptyState';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const dow = (d: string) => new Date(`${d}T00:00:00`).getDay();
@@ -283,14 +284,14 @@ export function DailyChart({ vals, dates, unit }: DailyChartProps) {
   if (!n) {
     return (
       <div ref={wrapRef}>
-        <div className="empty">데이터 없음</div>
+        <EmptyState />
       </div>
     );
   }
   if (Math.max(...vals) <= 0) {
     return (
       <div ref={wrapRef}>
-        <div className="empty">이 기간에 기록된 값이 없습니다 (모든 날짜 0)</div>
+        <EmptyState>이 기간에 기록된 값이 없습니다 (모든 날짜 0)</EmptyState>
       </div>
     );
   }
@@ -517,7 +518,7 @@ export function MonthlyChart({
   if (!idx.length || Math.max(...allv) <= 0) {
     return (
       <div ref={wrapRef}>
-        <div className="empty">이 기간에 기록된 값이 없습니다</div>
+        <EmptyState>이 기간에 기록된 값이 없습니다</EmptyState>
       </div>
     );
   }

@@ -1,8 +1,50 @@
-import { useEffect, useState } from 'react';
-import { Check, CheckSquare, Download, FileSpreadsheet, Square, X } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Check, CheckSquare, Download, FileSpreadsheet, Square } from 'lucide-react';
 import type { DashboardPayload } from '../types/analytics';
 import { exportFilteredExcel, type ExportFilterOptions } from '../utils/exportExcel';
-import { CustomSelect } from './CustomSelect';
+import { monthLabel, periodLabel } from '../utils/format';
+import { Button } from './Button';
+import { CloseButton } from './CloseButton';
+import { Dropdown } from './Dropdown';
+
+type PeriodMode = 'current' | 'month' | 'year';
+type SheetKey = keyof ExportFilterOptions['sheets'];
+
+const SHEET_ITEMS: Array<{ key: SheetKey; name: string; desc: string }> = [
+  { key: 'kpi', name: '핵심 지표 요약', desc: '방문자, 신규 방문자, 세션, PV, 가입, 체류시간 요약' },
+  { key: 'daily', name: '일별 상세 추이', desc: '날짜별 6대 지표 1일 단위 전수 데이터' },
+  { key: 'conv', name: '유입 매체 및 전환 분석', desc: '소스별 방문수 및 견적·가입·주문 전환수/전환율' },
+  { key: 'pages', name: '인기 페이지 TOP 50', desc: '경로별 조회수, 방문자, 체류시간 및 상품명' },
+  { key: 'goods', name: '고도몰 인기 상품 TOP 50', desc: '쇼핑몰 URL 기준 상품별 조회수 및 순위' },
+];
+
+interface PeriodOptionProps {
+  mode: PeriodMode;
+  title: string;
+  checked: boolean;
+  onSelect: (mode: PeriodMode) => void;
+  children: ReactNode;
+}
+
+/** 기간 선택 라디오 카드 */
+function PeriodOption({ mode, title, checked, onSelect, children }: PeriodOptionProps) {
+  return (
+    <label className={`period-card ${checked ? 'active' : ''}`}>
+      <input
+        type="radio"
+        name="periodMode"
+        value={mode}
+        checked={checked}
+        onChange={() => onSelect(mode)}
+      />
+      <div className="period-card-head">
+        <span className={`radio-dot ${checked ? 'checked' : ''}`} />
+        <span className="period-title">{title}</span>
+      </div>
+      {children}
+    </label>
+  );
+}
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -25,7 +67,7 @@ export function ExportModal({
   const initialMonth = /^\d{4}-\d{2}$/.test(currentSel) ? currentSel : latestMonth;
   const initialYear = currentSel.slice(0, 4) || years[years.length - 1] || '2026';
 
-  const [periodMode, setPeriodMode] = useState<'current' | 'month' | 'year'>('current');
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('current');
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
   const [selectedYear, setSelectedYear] = useState(initialYear);
   const [isExporting, setIsExporting] = useState(false);
@@ -62,8 +104,8 @@ export function ExportModal({
 
   if (!isOpen) return null;
 
+  const allSelected = Object.values(sheets).every(Boolean);
   const toggleAll = () => {
-    const allSelected = Object.values(sheets).every(Boolean);
     setSheets({
       kpi: !allSelected,
       daily: !allSelected,
@@ -100,15 +142,13 @@ export function ExportModal({
   };
 
   const getPeriodLabel = () => {
-    if (periodMode === 'current') {
-      return /^\d{4}$/.test(currentSel)
-        ? `${currentSel}년 연간 누적`
-        : `${currentSel.slice(0, 4)}년 ${+currentSel.slice(5)}월`;
-    }
-    if (periodMode === 'month') {
-      return `${selectedMonth.slice(0, 4)}년 ${+selectedMonth.slice(5)}월`;
-    }
-    return `${selectedYear}년 연간 누적`;
+    const k =
+      periodMode === 'current'
+        ? currentSel
+        : periodMode === 'month'
+          ? selectedMonth
+          : selectedYear;
+    return /^\d{4}$/.test(k) ? `${k}년 연간 누적` : monthLabel(k);
   };
 
   return (
@@ -132,14 +172,7 @@ export function ExportModal({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            className="btn-modal-close"
-            onClick={onClose}
-            aria-label="닫기"
-          >
-            <X size={18} />
-          </button>
+          <CloseButton className="btn-modal-close" label="닫기" onClick={onClose} />
         </div>
 
         <div className="modal-body">
@@ -147,69 +180,48 @@ export function ExportModal({
           <div className="modal-section">
             <label className="modal-section-label">1. 기간 선택</label>
             <div className="period-options">
-              <label className={`period-card ${periodMode === 'current' ? 'active' : ''}`}>
-                <input
-                  type="radio"
-                  name="periodMode"
-                  value="current"
-                  checked={periodMode === 'current'}
-                  onChange={() => setPeriodMode('current')}
-                />
-                <div className="period-card-head">
-                  <span className={`radio-dot ${periodMode === 'current' ? 'checked' : ''}`} />
-                  <span className="period-title">현재 보고 있는 화면</span>
-                </div>
+              <PeriodOption
+                mode="current"
+                title="현재 보고 있는 화면"
+                checked={periodMode === 'current'}
+                onSelect={setPeriodMode}
+              >
                 <div className="period-control-box period-badge-box">
-                  {/^\d{4}$/.test(currentSel)
-                    ? `${currentSel}년 연간`
-                    : `${currentSel.slice(0, 4)}년 ${+currentSel.slice(5)}월`}
+                  {periodLabel(currentSel)}
                 </div>
-              </label>
+              </PeriodOption>
 
-              <label className={`period-card ${periodMode === 'month' ? 'active' : ''}`}>
-                <input
-                  type="radio"
-                  name="periodMode"
-                  value="month"
-                  checked={periodMode === 'month'}
-                  onChange={() => setPeriodMode('month')}
-                />
-                <div className="period-card-head">
-                  <span className={`radio-dot ${periodMode === 'month' ? 'checked' : ''}`} />
-                  <span className="period-title">특정 월 선택</span>
-                </div>
-                <CustomSelect
+              <PeriodOption
+                mode="month"
+                title="특정 월 선택"
+                checked={periodMode === 'month'}
+                onSelect={setPeriodMode}
+              >
+                <Dropdown
                   className="period-control-box"
+                  ariaLabel="내보낼 월"
                   value={selectedMonth}
                   disabled={periodMode !== 'month'}
                   options={keys
                     .slice()
                     .reverse()
-                    .map((k) => ({
-                      value: k,
-                      label: `${k.slice(0, 4)}년 ${+k.slice(5)}월`,
-                    }))}
+                    .map((k) => ({ value: k, label: monthLabel(k) }))}
                   onChange={(val) => {
                     setSelectedMonth(val);
                     setPeriodMode('month');
                   }}
                 />
-              </label>
+              </PeriodOption>
 
-              <label className={`period-card ${periodMode === 'year' ? 'active' : ''}`}>
-                <input
-                  type="radio"
-                  name="periodMode"
-                  value="year"
-                  checked={periodMode === 'year'}
-                  onChange={() => setPeriodMode('year')}
-                />
-                <div className="period-card-head">
-                  <span className={`radio-dot ${periodMode === 'year' ? 'checked' : ''}`} />
-                  <span className="period-title">연간 전체 요약</span>
-                </div>
-                <CustomSelect
+              <PeriodOption
+                mode="year"
+                title="연간 전체 요약"
+                checked={periodMode === 'year'}
+                onSelect={setPeriodMode}
+              >
+                <Dropdown
                   className="period-control-box"
+                  ariaLabel="내보낼 연도"
                   value={selectedYear}
                   disabled={periodMode !== 'year'}
                   options={years
@@ -224,7 +236,7 @@ export function ExportModal({
                     setPeriodMode('year');
                   }}
                 />
-              </label>
+              </PeriodOption>
             </div>
           </div>
 
@@ -237,7 +249,7 @@ export function ExportModal({
                 className="btn-text-toggle"
                 onClick={toggleAll}
               >
-                {Object.values(sheets).every(Boolean) ? (
+                {allSelected ? (
                   <>
                     <Square size={13} />
                     <span>전체 해제</span>
@@ -252,80 +264,22 @@ export function ExportModal({
             </div>
 
             <div className="sheet-checklist">
-              <label className="sheet-item">
-                <input
-                  type="checkbox"
-                  checked={sheets.kpi}
-                  onChange={(e) => setSheets({ ...sheets, kpi: e.target.checked })}
-                />
-                <span className={`custom-checkbox ${sheets.kpi ? 'checked' : ''}`}>
-                  {sheets.kpi && <Check size={12} strokeWidth={3} />}
-                </span>
-                <span className="sheet-info">
-                  <b className="sheet-name">핵심 지표 요약</b>
-                  <span className="sheet-desc">방문자, 신규 방문자, 세션, PV, 가입, 체류시간 요약</span>
-                </span>
-              </label>
-
-              <label className="sheet-item">
-                <input
-                  type="checkbox"
-                  checked={sheets.daily}
-                  onChange={(e) => setSheets({ ...sheets, daily: e.target.checked })}
-                />
-                <span className={`custom-checkbox ${sheets.daily ? 'checked' : ''}`}>
-                  {sheets.daily && <Check size={12} strokeWidth={3} />}
-                </span>
-                <span className="sheet-info">
-                  <b className="sheet-name">일별 상세 추이</b>
-                  <span className="sheet-desc">날짜별 6대 지표 1일 단위 전수 데이터</span>
-                </span>
-              </label>
-
-              <label className="sheet-item">
-                <input
-                  type="checkbox"
-                  checked={sheets.conv}
-                  onChange={(e) => setSheets({ ...sheets, conv: e.target.checked })}
-                />
-                <span className={`custom-checkbox ${sheets.conv ? 'checked' : ''}`}>
-                  {sheets.conv && <Check size={12} strokeWidth={3} />}
-                </span>
-                <span className="sheet-info">
-                  <b className="sheet-name">유입 매체 및 전환 분석</b>
-                  <span className="sheet-desc">소스별 방문수 및 견적·가입·주문 전환수/전환율</span>
-                </span>
-              </label>
-
-              <label className="sheet-item">
-                <input
-                  type="checkbox"
-                  checked={sheets.pages}
-                  onChange={(e) => setSheets({ ...sheets, pages: e.target.checked })}
-                />
-                <span className={`custom-checkbox ${sheets.pages ? 'checked' : ''}`}>
-                  {sheets.pages && <Check size={12} strokeWidth={3} />}
-                </span>
-                <span className="sheet-info">
-                  <b className="sheet-name">인기 페이지 TOP 50</b>
-                  <span className="sheet-desc">경로별 조회수, 방문자, 체류시간 및 상품명</span>
-                </span>
-              </label>
-
-              <label className="sheet-item">
-                <input
-                  type="checkbox"
-                  checked={sheets.goods}
-                  onChange={(e) => setSheets({ ...sheets, goods: e.target.checked })}
-                />
-                <span className={`custom-checkbox ${sheets.goods ? 'checked' : ''}`}>
-                  {sheets.goods && <Check size={12} strokeWidth={3} />}
-                </span>
-                <span className="sheet-info">
-                  <b className="sheet-name">고도몰 인기 상품 TOP 50</b>
-                  <span className="sheet-desc">쇼핑몰 URL 기준 상품별 조회수 및 순위</span>
-                </span>
-              </label>
+              {SHEET_ITEMS.map(({ key, name, desc }) => (
+                <label key={key} className="sheet-item">
+                  <input
+                    type="checkbox"
+                    checked={sheets[key]}
+                    onChange={(e) => setSheets({ ...sheets, [key]: e.target.checked })}
+                  />
+                  <span className={`custom-checkbox ${sheets[key] ? 'checked' : ''}`}>
+                    {sheets[key] && <Check size={12} strokeWidth={3} />}
+                  </span>
+                  <span className="sheet-info">
+                    <b className="sheet-name">{name}</b>
+                    <span className="sheet-desc">{desc}</span>
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
         </div>
@@ -335,22 +289,18 @@ export function ExportModal({
             선택된 기간: <b>{getPeriodLabel()}</b> ({selectedCount}개 시트)
           </div>
           <div className="footer-acts">
-            <button
-              type="button"
-              className="btn btn-modal-cancel"
-              onClick={onClose}
-            >
+            <Button className="btn-modal-cancel" onClick={onClose}>
               취소
-            </button>
-            <button
-              type="button"
-              className="btn pri btn-modal-download"
+            </Button>
+            <Button
+              variant="primary"
+              className="btn-modal-download"
               disabled={selectedCount === 0 || isExporting}
               onClick={handleDownload}
+              icon={<Download size={14} />}
             >
-              <Download size={14} />
-              <span>{isExporting ? '다운로드 생성 중...' : '엑셀 다운로드 (.xlsx)'}</span>
-            </button>
+              {isExporting ? '다운로드 생성 중...' : '엑셀 다운로드 (.xlsx)'}
+            </Button>
           </div>
         </div>
       </div>

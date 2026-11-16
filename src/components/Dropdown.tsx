@@ -15,6 +15,7 @@ interface DropdownProps<T extends string | number> {
   ariaLabel: string;
   className?: string;
   id?: string;
+  disabled?: boolean;
 }
 
 export function Dropdown<T extends string | number>({
@@ -24,6 +25,7 @@ export function Dropdown<T extends string | number>({
   ariaLabel,
   className = '',
   id,
+  disabled = false,
 }: DropdownProps<T>): React.ReactElement {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -82,14 +84,18 @@ export function Dropdown<T extends string | number>({
     else if (e.key === 'Home') setActive(step(-1, 1));
     else if (e.key === 'End') setActive(step(options.length, -1));
     else if (e.key === 'Enter' || e.key === ' ') pick(active);
-    else if (e.key === 'Escape' || e.key === 'Tab') close();
+    else if (e.key === 'Escape') {
+      // 모달·서랍의 ESC 닫기까지 번지지 않도록 목록만 닫는다
+      e.stopPropagation();
+      close();
+    } else if (e.key === 'Tab') close();
     else return;
     e.preventDefault();
   };
 
   return (
     <div
-      className={`dd${open ? ' open' : ''}${className ? ` ${className}` : ''}`}
+      className={`dd${open ? ' open' : ''}${disabled ? ' disabled' : ''}${className ? ` ${className}` : ''}`}
       ref={rootRef}
       id={id}
     >
@@ -101,6 +107,7 @@ export function Dropdown<T extends string | number>({
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         aria-label={ariaLabel}
+        disabled={disabled}
         onClick={() => (open ? close() : openList())}
       >
         <span>{selected ? selected.label : String(value)}</span>

@@ -1,4 +1,5 @@
 import { FileSpreadsheet, Menu, Moon, Search, Sun } from 'lucide-react';
+import { Button } from './Button';
 
 interface HeaderProps {
   /** 지금 화면 이름 (경로의 마지막 칸) — 화면 머리말과 같은 이름 */
@@ -19,17 +20,15 @@ interface HeaderProps {
 export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme, onSearch, onExportExcel }: HeaderProps) {
   return (
     <header className="top">
-      <button
-        type="button"
-        className="btn ic burger"
+      <Button
+        className="ic burger"
         id="burger"
         aria-label="메뉴 열기"
         aria-expanded={drawerOpen}
         aria-controls="side"
         onClick={onOpenDrawer}
-      >
-        <Menu size={18} aria-hidden="true" />
-      </button>
+        icon={<Menu size={18} aria-hidden="true" />}
+      />
 
       <h1>
         <span className="ttx">방문 &amp; 전환 대시보드 </span>
@@ -41,30 +40,28 @@ export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme,
       <span className="sp" />
 
       <div className="acts">
-        <button
-          type="button"
-          className="btn ic top-search"
+        <Button
+          className="ic top-search"
           id="btnSearch"
           aria-label="URL 분석 검색"
           title="URL 분석 (Ctrl+K)"
           onClick={onSearch}
-        >
-          <Search size={18} aria-hidden="true" />
-        </button>
+          icon={<Search size={18} aria-hidden="true" />}
+        />
 
         {onExportExcel && (
-          <button
-            type="button"
-            className="btn btn-excel"
+          <Button
+            className="btn-excel"
             id="btnExportExcel"
             title="현재 화면의 실적 데이터를 엑셀(.xlsx)로 다운로드합니다"
             onClick={onExportExcel}
+            icon={<FileSpreadsheet size={15} aria-hidden="true" />}
           >
-            <FileSpreadsheet size={15} aria-hidden="true" />
-            <span>엑셀 다운로드</span>
-          </button>
+            엑셀 다운로드
+          </Button>
         )}
 
+        {/* 테마 스위치 — 모양이 달라(.tgl) 공용 Button 이 아닌 전용 마크업 */}
         <button
           type="button"
           className="tgl"

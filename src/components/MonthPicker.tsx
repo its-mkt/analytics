@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { monthLabel } from '../utils/format';
 import { Dropdown } from './Dropdown';
 
 interface MonthPickerProps {
@@ -43,7 +44,7 @@ export const MonthPicker: React.FC<MonthPickerProps> = ({
   const next = isYearMode ? String(Number(year) + 1) : nextM(currentKey);
   const prevDisabled = isYearMode ? Number(year) <= minYear : prev < min;
   const nextDisabled = isYearMode ? Number(year) >= maxYear : next > max;
-  const maxLabel = `${max.slice(0, 4)}년 ${Number(max.slice(5, 7))}월`;
+  const maxLabel = monthLabel(max);
 
   const yearOptions = Array.from(
     { length: maxYear - minYear + 1 },

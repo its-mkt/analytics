@@ -4,11 +4,13 @@ import {
   LayoutDashboard,
   ShoppingBag,
   Target,
-  X,
+  type LucideIcon,
 } from 'lucide-react';
 import type { SiteId, ViewTab } from '../types/analytics';
 import { routePath } from '../utils/route';
 import { SITES } from '../utils/site';
+import { VIEW_TITLES } from '../utils/views';
+import { CloseButton } from './CloseButton';
 import { Dropdown, type DropdownOption } from './Dropdown';
 import { SegmentedControl } from './SegmentedControl';
 
@@ -24,6 +26,20 @@ const goDashboard = (id: DashboardId) => {
   const d = DASHBOARDS.find((x) => x.id === id);
   if (d) window.location.href = import.meta.env.DEV ? d.local : d.live;
 };
+
+interface NavItem {
+  tab: ViewTab;
+  id: string;
+  Icon: LucideIcon;
+}
+
+// 메뉴는 ad-insight 처럼 '대시보드' 한 묶음. 이름은 헤더 경로·화면 머리말과 같은 VIEW_TITLES
+const NAV_ITEMS: NavItem[] = [
+  { tab: 'overview', id: 'navOverview', Icon: LayoutDashboard },
+  { tab: 'conversion', id: 'navConversion', Icon: Target },
+  { tab: 'content', id: 'navContent', Icon: ShoppingBag },
+  { tab: 'page', id: 'navPage', Icon: FileSearch },
+];
 
 interface SidebarProps {
   title: string;
@@ -59,15 +75,12 @@ export function Sidebar({
         onClick={onCloseDrawer}
       />
       <aside className={`side ${open ? 'open' : ''}`} id="side">
-        <button
-          type="button"
+        <CloseButton
           className="btn ic sclose"
           id="sclose"
-          aria-label="메뉴 닫기"
+          label="메뉴 닫기"
           onClick={onCloseDrawer}
-        >
-          <X size={18} aria-hidden="true" />
-        </button>
+        />
 
         {/* 브랜드: 아이콘은 처음 화면으로, 이름은 대시보드 선택 박스 (ad-insight ↔ analytics) */}
         <div className="brand" id="brand">
@@ -103,43 +116,19 @@ export function Sidebar({
 
         <nav className="sn" id="sideNav" aria-label="사이드바 메뉴">
           <div className="lbl">대시보드</div>
-          <button
-            type="button"
-            className={`m ${currentTab === 'overview' ? 'on' : ''}`}
-            id="navOverview"
-            onClick={() => onSelectTab('overview')}
-          >
-            <LayoutDashboard size={15} aria-hidden="true" />
-            <span>종합 요약</span>
-          </button>
-          <button
-            type="button"
-            className={`m ${currentTab === 'conversion' ? 'on' : ''}`}
-            id="navConversion"
-            onClick={() => onSelectTab('conversion')}
-          >
-            <Target size={15} aria-hidden="true" />
-            <span>전환 분석</span>
-          </button>
-          <button
-            type="button"
-            className={`m ${currentTab === 'content' ? 'on' : ''}`}
-            id="navContent"
-            onClick={() => onSelectTab('content')}
-          >
-            <ShoppingBag size={15} aria-hidden="true" />
-            <span>페이지 · 상품</span>
-          </button>
-
-          <button
-            type="button"
-            className={`m ${currentTab === 'page' ? 'on' : ''}`}
-            id="navPage"
-            onClick={() => onSelectTab('page')}
-          >
-            <FileSearch size={15} aria-hidden="true" />
-            <span>URL 분석</span>
-          </button>
+          {NAV_ITEMS.map(({ tab, id, Icon }) => (
+            <button
+              key={tab}
+              type="button"
+              className={`m ${currentTab === tab ? 'on' : ''}`}
+              id={id}
+              aria-current={currentTab === tab ? 'page' : undefined}
+              onClick={() => onSelectTab(tab)}
+            >
+              <Icon size={15} aria-hidden="true" />
+              <span>{VIEW_TITLES[tab]}</span>
+            </button>
+          ))}
         </nav>
 
         {/* 수집 상태 — ad-insight 사이드바 아래 '… 수집' 상자와 같은 자리 */}
