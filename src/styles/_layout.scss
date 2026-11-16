@@ -106,7 +106,7 @@
 
     .dd-trigger {
       width: 100%;
-      height: 1.75rem;
+      height: var(--btn-h-sm);
       padding: 0 0.5rem;
       border-color: transparent;
       border-radius: var(--radius-btn); // 마우스를 올렸을 때 배경도 알약
@@ -189,7 +189,8 @@
   background: none;
   color: var(--ink2);
   border-radius: var(--radius-btn); // 사이드바 메뉴도 누르는 것 — 알약
-  padding: 0.5rem 0.75rem;
+  height: var(--btn-h-lg);
+  padding: 0 0.75rem;
   font-size: 0.875rem;
   cursor: pointer;
   text-align: left;
@@ -313,7 +314,7 @@
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 50%;
-    background: var(--up);
+    background: var(--ok); // 수집 정상 (증감 색 아님)
     flex: none;
   }
 

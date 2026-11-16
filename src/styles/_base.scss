@@ -157,8 +157,8 @@ textarea:focus-visible {
   }
 
   &.ok {
-    background: color-mix(in srgb, var(--up) 15%, transparent);
-    color: var(--up);
+    background: color-mix(in srgb, var(--ok) 15%, transparent);
+    color: var(--ok);
   }
 }
 
@@ -168,11 +168,17 @@ textarea:focus-visible {
   color: var(--ink);
   border-radius: var(--radius-btn);
   padding: 0 0.75rem;
-  height: 2rem;
+  height: var(--btn-h);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   box-shadow: var(--sh);
+
+  &.btn-sm {
+    height: var(--btn-h-sm);
+    padding: 0 0.625rem;
+    font-size: 0.8125rem;
+  }
 
   &:hover {
     background: var(--accbg);

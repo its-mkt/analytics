@@ -21,10 +21,9 @@ $bp-sm: 480px;
   --hi: #fbbf24;
   --hi-ink: #fbbf24;
   --ok: #3ecf5f;
-  --up: #3ecf5f;
-  --down: #ff6369;
-  --rise: #ff6369;
-  --fall: #5b9bff;
+  --up: #ff6369; // 증감: 올라감 = 빨강 (ad-insight 와 같은 뜻, 두 대시보드 공통)
+  --down: #5b9bff; // 증감: 내려감 = 파랑
+  --weekend: #ff6369; // 차트 주말 날짜 (증감과 별개)
   --warn: #f0b04a;
   --warnbg: #2b2210;
   --bar: #6c78e6;
@@ -35,6 +34,12 @@ $bp-sm: 480px;
 }
 
 :root {
+  // 버튼 높이 — 버튼(누르는 것)의 높이는 위아래 패딩이 아니라 이 값으로 정한다. 패딩은 좌우만 쓴다 (README '디자인 규칙')
+  --btn-h-xs: 1.5rem; // 24px — 작은 세그먼트·아이콘 닫기
+  --btn-h-sm: 1.75rem; // 28px — 칩·세그먼트(md)·작은 버튼
+  --btn-h: 2rem; // 32px — 기본 버튼·드롭다운
+  --btn-h-lg: 2.25rem; // 36px — 사이드바 메뉴·모달·검색 줄
+  --btn-h-xl: 2.75rem; // 44px — 휴대폰 손가락 크기
   --bg: #f7f8f8;
   --side: #fbfbfc;
   --card: #fff;
@@ -51,10 +56,9 @@ $bp-sm: 480px;
   --hi: #f59e0b;
   --hi-ink: #b45309;
   --ok: #13803a;
-  --up: #1f8a3b;
-  --down: #d92d3a;
-  --rise: #d92d3a;
-  --fall: #2f6fed;
+  --up: #d92d3a; // 증감: 올라감 = 빨강 (ad-insight 와 같은 뜻, 두 대시보드 공통)
+  --down: #2f6fed; // 증감: 내려감 = 파랑
+  --weekend: #d92d3a; // 차트 주말 날짜 (증감과 별개)
   --warn: #9a5b00;
   --warnbg: #fff4e0;
   --bar: #5e6ad2;
