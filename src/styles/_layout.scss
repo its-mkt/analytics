@@ -73,7 +73,7 @@
   i {
     width: var(--h-32);
     height: var(--h-32);
-    border-radius: 0.5rem;
+    border-radius: 999px; // 동그라미 로고 (파비콘과 같은 모양)
     background: var(--brand);
     display: grid;
     place-items: center;
@@ -97,7 +97,7 @@
 
   .brand-home {
     display: flex;
-    border-radius: 0.5rem;
+    border-radius: 999px; // 포커스 테두리도 동그랗게
     cursor: pointer;
   }
 
