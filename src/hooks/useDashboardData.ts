@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { DashboardPayload, GodomallQuotes, GodomallSignups, MonthData } from '../types/analytics';
+import type { DashboardPayload, GodomallQuotes, GodomallSignups, MonthData, SiteId } from '../types/analytics';
+import { mergeSignups } from '../utils/metrics';
+import { webappUrl, wrongSite } from '../utils/site';
 
 const DEFAULT_DATA: DashboardPayload = {
   names: {},
@@ -15,19 +17,29 @@ const DEFAULT_DATA: DashboardPayload = {
 
 const CURRENT_MONTH_POLL_MS = 300_000; // 5 minutes
 
-export function useDashboardData() {
-  const [data, setData] = useState<DashboardPayload>(() => {
-    const w = typeof window !== 'undefined' ? window.__DATA__ : undefined;
-    const d = (w && typeof w === 'object' ? w : DEFAULT_DATA) as DashboardPayload;
-    return { ...d, godoQuotes: null }; // 빌드 스냅샷 억제: 최초 live poll 결과로 교체
-  });
+/** 빌드가 심은 데이터에서 그 사이트 값을 꺼낸다. 온코어는 수집기 주소에 site=oncore 를 붙여 같은 웹앱의 온코어 응답을 받는다 */
+function initialData(site: SiteId): DashboardPayload {
+  const w = typeof window !== 'undefined' ? window.__DATA__ : undefined;
+  const root = (w && typeof w === 'object' ? w : DEFAULT_DATA) as DashboardPayload;
+  if (site === 'itket') {
+    const floor = mergeSignups(root.godoSignups, root.godoSignupsAdmin);
+    return { ...root, oncore: undefined, godoSignups: floor, godoSignupsFloor: floor };
+  }
+  const oc = root.oncore;
+  return {
+    ...(oc ?? { ...DEFAULT_DATA, title: '온코어 애널리틱스', siteUrl: 'https://on-core.co.kr', months: {} }),
+    site: 'oncore',
+    godoQuotes: null,
+    godoSignups: null,
+    liveUrl: root.liveUrl ? webappUrl(root.liveUrl, 'site=oncore') : '',
+  };
+}
 
-  // live poll이 완료될 때까지 견적 카드를 스켈레톤으로 표시
-  const [godoQuotesLoading, setGodoQuotesLoading] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const w = window.__DATA__;
-    return !!(w && typeof w === 'object' && (w as DashboardPayload).liveUrl);
-  });
+export function useDashboardData(site: SiteId = 'itket') {
+  const [data, setData] = useState<DashboardPayload>(() => ({ ...initialData(site), godoQuotes: null })); // 빌드 스냅샷 억제: 최초 live poll 결과로 교체
+
+  // live poll이 완료될 때까지 견적 카드를 스켈레톤으로 표시 (견적 실데이터는 아이티켓만 있다)
+  const [godoQuotesLoading, setGodoQuotesLoading] = useState(() => site === 'itket' && !!initialData(site).liveUrl);
 
   const keys = useMemo(() => Object.keys(data.months).sort(), [data.months]);
   const years = useMemo(
@@ -39,14 +51,14 @@ export function useDashboardData() {
   const pollCur = useCallback(async () => {
     if (!data.liveUrl || document.visibilityState === 'hidden') return;
     try {
-      const res = await fetch(`${data.liveUrl}?mode=cur`);
+      const res = await fetch(webappUrl(data.liveUrl, 'mode=cur'));
       const payload = (await res.json()) as {
         months?: Record<string, MonthData>;
         updated?: string;
         godoQuotes?: GodomallQuotes | null;
         godoSignups?: GodomallSignups | null;
       };
-      if (!payload.months) {
+      if (!payload.months || wrongSite(data.liveUrl, payload)) {
         setGodoQuotesLoading(false);
         return;
       }
@@ -70,7 +82,7 @@ export function useDashboardData() {
           'godoQuotes' in payload ? (payload.godoQuotes ?? null) : prev.godoQuotes;
         if (nextGodoQuotes !== prev.godoQuotes) changed = true;
         // 가입 실데이터(고도몰 DB 일별) — 조회 실패(null)면 빌드 스냅샷(월 합계)을 그대로 둔다
-        const nextGodoSignups = payload.godoSignups ? payload.godoSignups : prev.godoSignups;
+        const nextGodoSignups = payload.godoSignups ? mergeSignups(payload.godoSignups, prev.godoSignupsFloor) : prev.godoSignups;
         if (nextGodoSignups !== prev.godoSignups) changed = true;
         if (!changed) return prev;
         return {

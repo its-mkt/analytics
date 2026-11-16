@@ -170,9 +170,18 @@ export interface MetaInfo {
   failed?: number;
 }
 
+/** 보고 있는 사이트 — 아이티켓(itket.com) / 온코어(on-core.co.kr) */
+export type SiteId = 'itket' | 'oncore';
+
 export interface DashboardPayload {
+  /** 빌드가 넣는 사이트 구분 (예전 빌드에는 없음 = 아이티켓) */
+  site?: SiteId;
   names: NamesMap;
   godoSignups: GodomallSignups | null;
+  /** 고도몰 관리자 통계의 월별 신규회원 수 (data/ref/godomall-signups-admin.json) — 회원 DB 값이 휴면 분리로 줄어든 과거 달을 채운다 */
+  godoSignupsAdmin?: GodomallSignups | null;
+  /** 화면이 쓰는 회원가입 바닥값 — 빌드 저장본(수집 때마다 달별 최댓값)과 관리자 통계 중 큰 값. 실시간 DB 값이 휴면 분리로 줄어도 이 아래로 내려가지 않는다 */
+  godoSignupsFloor?: GodomallSignups | null;
   godoQuotes: GodomallQuotes | null;
   title: string;
   siteUrl: string;
@@ -180,6 +189,8 @@ export interface DashboardPayload {
   meta: MetaInfo;
   months: Record<string, MonthData>;
   liveUrl: string;
+  /** 온코어 데이터 — 아이티켓 페이로드에만 붙는다 (형식은 같음) */
+  oncore?: DashboardPayload;
 }
 
 export interface LiveMinuteRow {

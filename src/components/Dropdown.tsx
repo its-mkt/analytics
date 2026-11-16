@@ -15,6 +15,7 @@ interface DropdownProps<T extends string | number> {
   ariaLabel: string;
   className?: string;
   id?: string;
+  disabled?: boolean;
 }
 
 export function Dropdown<T extends string | number>({
@@ -24,6 +25,7 @@ export function Dropdown<T extends string | number>({
   ariaLabel,
   className = '',
   id,
+  disabled = false,
 }: DropdownProps<T>): React.ReactElement {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -82,34 +84,39 @@ export function Dropdown<T extends string | number>({
     else if (e.key === 'Home') setActive(step(-1, 1));
     else if (e.key === 'End') setActive(step(options.length, -1));
     else if (e.key === 'Enter' || e.key === ' ') pick(active);
-    else if (e.key === 'Escape' || e.key === 'Tab') close();
+    else if (e.key === 'Escape') {
+      // 모달·서랍의 ESC 닫기까지 번지지 않도록 목록만 닫는다
+      e.stopPropagation();
+      close();
+    } else if (e.key === 'Tab') close();
     else return;
     e.preventDefault();
   };
 
   return (
     <div
-      className={`dd${open ? ' open' : ''}${className ? ` ${className}` : ''}`}
+      className={`dropdown${open ? ' open' : ''}${disabled ? ' disabled' : ''}${className ? ` ${className}` : ''}`}
       ref={rootRef}
       id={id}
     >
       <button
         type="button"
-        className="dd-trigger"
+        className="dropdown-trigger"
         ref={triggerRef}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         aria-label={ariaLabel}
+        disabled={disabled}
         onClick={() => (open ? close() : openList())}
       >
         <span>{selected ? selected.label : String(value)}</span>
-        <ChevronDown size={14} className="dd-chev" aria-hidden="true" />
+        <ChevronDown size={14} className="dropdown-chev" aria-hidden="true" />
       </button>
 
       {open && (
         <div
-          className="dd-menu"
+          className="dropdown-menu"
           id={listId}
           ref={listRef}
           role="listbox"
@@ -127,7 +134,7 @@ export function Dropdown<T extends string | number>({
                 data-idx={idx}
                 aria-selected={isSelected}
                 aria-disabled={opt.disabled || undefined}
-                className={`dd-opt${isSelected ? ' on' : ''}${isActive ? ' active' : ''}${
+                className={`dropdown-opt${isSelected ? ' on' : ''}${isActive ? ' active' : ''}${
                   opt.disabled ? ' disabled' : ''
                 }`}
                 title={opt.title}
@@ -136,7 +143,7 @@ export function Dropdown<T extends string | number>({
               >
                 <span>{opt.label}</span>
                 {isSelected && (
-                  <Check size={14} className="dd-check" aria-hidden="true" />
+                  <Check size={14} className="dropdown-check" aria-hidden="true" />
                 )}
               </div>
             );

@@ -1,16 +1,11 @@
 import { useEffect } from 'react';
-import { ExternalLink, X } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { usePageAnalysis } from '../hooks/usePageAnalysis';
-import type { MonthData, NamesMap, PageAnalysisResult } from '../types/analytics';
-import { SUSP_MIN_PV, SUSP_RATIO } from '../utils/metrics';
-import {
-  buildPageDailySeries,
-  buildPageKpis,
-  resolvePageTitle,
-} from '../utils/pageAnalysis';
-import { DailyChart } from './BarChart';
-import { KpiCardsGrid } from './KpiCardsGrid';
-import { PageAnalysisDetails } from './PageAnalysisDetails';
+import type { MonthData, NamesMap } from '../types/analytics';
+import { resolvePageTitle } from '../utils/pageAnalysis';
+import { Button } from './Button';
+import { CloseButton } from './CloseButton';
+import { PageAnalysisResult } from './PageAnalysisResult';
 import { PageAnalysisSkeleton } from './PageAnalysisSkeleton';
 
 interface PageDrawerProps {
@@ -71,77 +66,6 @@ export function PageDrawer({
 
   const { title, sub } = resolvePageTitle(pageQ, names);
 
-  const renderResult = (r: PageAnalysisResult) => {
-    const t = r.total || {};
-    const views = t.screenPageViews || 0;
-    const rMonth = r.month || pageM;
-
-    if (!views) {
-      return (
-        <div className="card">
-          <div className="empty">
-            “{r.q || pageQ}”의 {rMonth} 조회 기록이 없습니다.
-            <br />
-            주소 일부나 상품번호를 확인해 보세요.
-          </div>
-        </div>
-      );
-    }
-
-    const { dates, views: sv } = buildPageDailySeries(r, rMonth);
-    const ratio = t.activeUsers ? views / t.activeUsers : 0;
-    const kpiItems = buildPageKpis(r);
-
-    const ago = r.at
-      ? Math.max(0, Math.round((Date.now() - new Date(r.at).getTime()) / 60000))
-      : 0;
-
-    return (
-      <div className="drawer-body-inner">
-        {ratio > SUSP_RATIO && views > SUSP_MIN_PV && (
-          <div className="note">
-            ⚠ 방문자 1명당 조회수가 {ratio.toFixed(1)}배입니다. 내부 새로고침·자동 접속일 수 있습니다.
-          </div>
-        )}
-
-        <KpiCardsGrid
-          id="kpisPageDrawer"
-          ariaLabel="페이지 분석 핵심 지표"
-          items={kpiItems}
-        />
-
-        <section
-          className="card card-page-daily-views"
-          id="sectionDrawerDailyViews"
-        >
-          <div className="card-head-bar">
-            <h2>
-              <span>일별 조회수</span>
-              <span className="sub-title">
-                {rMonth}
-                {r.partial ? ' (진행 중)' : ''} ·{' '}
-                {ago < 1 ? '방금' : `${ago}분 전`} 조회
-              </span>
-            </h2>
-          </div>
-          <DailyChart vals={sv} dates={dates} unit="" />
-        </section>
-
-        <PageAnalysisDetails
-          result={r}
-          currentMonth={rMonth}
-          query={pageQ}
-          onOpenPage={(q, m) => {
-            if (onOpenFullPage) {
-              onClose();
-              onOpenFullPage(q, m);
-            }
-          }}
-        />
-      </div>
-    );
-  };
-
   return (
     <div className="page-drawer-portal" role="dialog" aria-modal="true">
       <div
@@ -162,38 +86,45 @@ export function PageDrawer({
 
           <div className="drawer-actions">
             {onOpenFullPage && (
-              <button
-                type="button"
-                className="btn btn-ghost btn-drawer-ext"
+              <Button
+                variant="ghost"
+                className="btn-drawer-ext"
                 title="전체 페이지 분석 화면으로 이동"
                 onClick={() => {
                   onClose();
                   onOpenFullPage(pageQ, pageM);
                 }}
+                icon={<ExternalLink size={15} />}
               >
-                <ExternalLink size={15} />
-                <span>전체 화면</span>
-              </button>
+                전체 화면
+              </Button>
             )}
-            <button
-              type="button"
+            <CloseButton
               className="btn btn-icon btn-drawer-close"
-              aria-label="서랍 닫기"
+              label="서랍 닫기"
               onClick={onClose}
-            >
-              <X size={18} />
-            </button>
+            />
           </div>
         </div>
 
         {/* 드로어 본문 콘텐츠 */}
         <div className="drawer-content">
-          {pageBusy ? (
+          {/* 조회 중이거나 첫 결과가 오기 전(창이 막 열린 순간)은 같은 로딩 모양 */}
+          {pageBusy || !pageRes ? (
             <PageAnalysisSkeleton query={pageQ} />
-          ) : !pageRes ? (
-            <div className="empty">분석 데이터를 불러오는 중입니다...</div>
           ) : (
-            renderResult(pageRes)
+            <PageAnalysisResult
+              result={pageRes}
+              query={pageQ}
+              fallbackMonth={pageM}
+              variant="drawer"
+              onOpenPage={(q, m) => {
+                if (onOpenFullPage) {
+                  onClose();
+                  onOpenFullPage(q, m);
+                }
+              }}
+            />
           )}
         </div>
       </div>

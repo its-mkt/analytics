@@ -22,6 +22,10 @@ const CFG = {
   JOIN_DONE_PATH: '/member/join_ok.php',     // 회원가입 완료 화면 — 사이트가 sign_up 이벤트를 보내지 않을 때의 대체 기준
   TOP_ROWS: 50,
   FILE_NAME: 'itket-analytics-data.json',
+  FILE_ID: '116fOOcfj-jNeYEKuj_2vbAkhUAHBnbNR', // 수집본 파일. 새로 만들면 이 값을 바꾼다
+  SHEET_ID: '1m2nYgwjzaAU5kGKaByzZEKwHrim3lyUK07B84-IBwBg', // 사람이 보는 시트 (itket-analytics 데이터)
+  SHEET_MONTHLY: '월별 요약',
+  SHEET_DAILY: '일별',
   BUDGET_MS: 4.5 * 60 * 1000,                // 한 번 실행에 쓸 최대 시간(6분 제한 대비)
   SCHEMA: 4,                                 // 수집 항목이 바뀌면 올린다 → 과거 월을 다시 채움 (3: 전환·이벤트·랜딩 추가, 4: 기기별 유입·전환)
   MEASUREMENT_ID: 'G-EJ5SHHZPND',            // 참고용(데이터 스트림 식별). 수집에는 PROPERTY_ID 를 쓴다
@@ -44,6 +48,18 @@ const CFG = {
 };
 let LAST_QUOTA_ = null;                      // 마지막 API 응답의 한도 사용량(진단용)
 const M = ['activeUsers', 'newUsers', 'sessions', 'screenPageViews', 'userEngagementDuration', 'engagedSessions'];
+
+/* 사이트 전환 — 수집·실시간·페이지 분석 함수는 지금 사이트(SITE_)의 GA4 속성·전환 정의로 조회한다.
+ * null = 아이티켓(CFG), ONCORE = 온코어. withSite_ 로 감싸 잠깐 바꾸고 끝나면 되돌린다. */
+let SITE_ = null;
+function site_() { return SITE_ || CFG; }
+function withSite_(site, fn) {
+  const prev = SITE_;
+  SITE_ = site === 'oncore' ? ONCORE : null;
+  try { return fn(); } finally { SITE_ = prev; }
+}
+// 캐시 키 앞머리 — 사이트마다 실시간·페이지 분석 캐시를 따로 둔다 (아이티켓은 예전 키 그대로)
+function ck_(k) { return SITE_ ? 'oc:' + k : k; }
 
 function todayKst_() { return Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd'); }
 function lastDay_(m) { const [y, mo] = m.split('-').map(Number); return Utilities.formatDate(new Date(Date.UTC(y, mo, 0)), 'UTC', 'yyyy-MM-dd'); }
@@ -68,7 +84,7 @@ function q_(dims, metrics, range, extra) {
     limit: 1000,
     returnPropertyQuota: true,
   }, extra || {});
-  const resp = AnalyticsData.Properties.runReport(req, 'properties/' + CFG.PROPERTY_ID);
+  const resp = AnalyticsData.Properties.runReport(req, 'properties/' + site_().PROPERTY_ID);
   if (resp.propertyQuota) LAST_QUOTA_ = resp.propertyQuota;
   return rows_(resp);
 }
@@ -116,9 +132,9 @@ function opt_(fn, fallback) {
   try { return fn(); }
   catch (e) { if (/Exhausted|quota/i.test(String((e && e.message) || e))) throw e; return fallback; }
 }
-const convPaths_ = () => CFG.CONVERSIONS.map((d) => d.path);
+const convPaths_ = () => site_().CONVERSIONS.map((d) => d.path);
 const convFilter_ = () => ({ filter: { fieldName: 'pagePath', inListFilter: { values: convPaths_() } } });
-const convIdOf_ = (path) => { const d = CFG.CONVERSIONS.filter((x) => x.path === path)[0]; return d && d.id; };
+const convIdOf_ = (path) => { const d = site_().CONVERSIONS.filter((x) => x.path === path)[0]; return d && d.id; };
 const bySessions_ = { orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 2000 };
 /** 랜딩 URL → 묶음 키. 상품 상세는 상품번호로, 나머지는 경로로 묶는다. */
 function landKey_(u) {
@@ -130,8 +146,8 @@ function landKey_(u) {
 
 /** 전환(정의된 화면을 본 세션) 집계: 전체·일별·유입 매체·채널·캠페인·랜딩 페이지·상품. n = 같은 키의 전체 세션(전환율 계산용). */
 function convStats_(range) {
-  const out = { defs: CFG.CONVERSIONS.map((d) => ({ id: d.id, name: d.name, path: d.path })), total: {}, daily: {}, byMedium: {}, byChannel: {}, byCampaign: {}, byLanding: {}, byGoods: {}, byDevice: {}, byDeviceChannel: {} };
-  const ids = CFG.CONVERSIONS.map((d) => d.id);
+  const out = { defs: site_().CONVERSIONS.map((d) => ({ id: d.id, name: d.name, path: d.path })), total: {}, daily: {}, byMedium: {}, byChannel: {}, byCampaign: {}, byLanding: {}, byGoods: {}, byDevice: {}, byDeviceChannel: {} };
+  const ids = site_().CONVERSIONS.map((d) => d.id);
   ids.forEach((id) => { out.total[id] = { sessions: 0, users: 0 }; out.daily[id] = []; ['byMedium', 'byChannel', 'byCampaign', 'byLanding', 'byGoods', 'byDevice', 'byDeviceChannel'].forEach((b) => (out[b][id] = [])); });
   const cf = convFilter_();
   q_(['pagePath'], ['sessions', 'activeUsers'], range, { dimensionFilter: cf }).forEach((r) => {
@@ -173,6 +189,12 @@ function convStats_(range) {
     out.byGoods[id] = rows.filter((r) => r.k.indexOf('goods:') === 0).slice(0, 50).map((r) => ({ k: r.k.slice(6), s: r.s, n: r.n }));
     out.byLanding[id] = rows.filter((r) => r.k.indexOf('goods:') !== 0).slice(0, 30);
   });
+  // 서버가 결제 주문마다 한 번 보내는 purchase 이벤트 (its-ad-insight sendGa4Purchases_). 전송 전에는 빈 값이다
+  const pf = { filter: { fieldName: 'eventName', stringFilter: { matchType: 'EXACT', value: 'purchase' } } };
+  out.purchase = opt_(() => ({
+    daily: q_(['date'], ['eventCount'], range, { dimensionFilter: pf, orderBys: [{ dimension: { dimensionName: 'date' } }] }).map((r) => ({ date: ymd_(r.date), count: r.eventCount })),
+    byMedium: q_(['sessionSourceMedium'], ['eventCount'], range, { dimensionFilter: pf, orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }], limit: 30 }).map((r) => ({ k: r.sessionSourceMedium, s: r.eventCount })),
+  }), { daily: [], byMedium: [] });
   return out;
 }
 
@@ -184,7 +206,7 @@ function ecomStats_(range) {
 
 function collectMonth_(m, today, reuse) {
   const range = { startDate: m + '-01', endDate: m === today.slice(0, 7) ? today : lastDay_(m) };
-  const top = (metric) => ({ orderBys: [{ metric: { metricName: metric }, desc: true }], limit: CFG.TOP_ROWS });
+  const top = (metric) => ({ orderBys: [{ metric: { metricName: metric }, desc: true }], limit: site_().TOP_ROWS });
   const total = q_([], M, range);
   const daily = q_(['date'], M, range, { orderBys: [{ dimension: { dimensionName: 'date' } }] });
   const pages = q_(['pagePath'], ['screenPageViews', 'activeUsers', 'userEngagementDuration'], range, top('screenPageViews'));
@@ -209,7 +231,7 @@ function collectMonth_(m, today, reuse) {
   const t = total[0] || {};
   const pick = (r) => { const o = {}; M.forEach((k) => (o[k] = r[k] || 0)); return o; };
   return {
-    v: CFG.SCHEMA,
+    v: site_().SCHEMA,
     month: m,
     partial: m === today.slice(0, 7),
     updated: new Date().toISOString(),
@@ -227,12 +249,46 @@ function collectMonth_(m, today, reuse) {
   };
 }
 
-function file_() {
-  const it = DriveApp.getFilesByName(CFG.FILE_NAME);
-  return it.hasNext() ? it.next() : DriveApp.createFile(CFG.FILE_NAME, '{"months":{}}', MimeType.PLAIN_TEXT);
+// 파일 이름이 아니라 ID 로 연다. 같은 이름의 바로가기·사본이 있으면 이름 검색이 엉뚱한 항목을 잡기 때문이다.
+function file_() { return DriveApp.getFileById(CFG.FILE_ID); }
+// 파일을 못 열면 그대로 오류를 낸다. 빈 데이터로 넘어가면 다음 저장 때 기존 수집본을 덮어쓸 수 있다.
+function load_() {
+  const text = file_().getBlob().getDataAsString();
+  if (!text.trim()) return { months: {} }; // 파일이 완전히 비었으면 되살릴 내용이 없으므로 GA4 에서 다시 채운다 (내용이 깨진 경우는 아래에서 오류)
+  try { return JSON.parse(text); } catch (e) { throw new Error(CFG.FILE_NAME + ' 내용이 JSON 이 아닙니다: ' + e.message); }
 }
-function load_() { try { return JSON.parse(file_().getBlob().getDataAsString()); } catch (e) { return { months: {} }; } }
 function save_(store) { file_().setContent(JSON.stringify(store)); }
+
+/** 사람이 보는 시트(월별 요약·일별)를 수집본으로 다시 쓴다. 표시용이라 실패해도 수집은 실패로 만들지 않는다. */
+function writeSheet_(store) {
+  try {
+    const ss = SpreadsheetApp.openById(CFG.SHEET_ID);
+    const put = (name, rows) => {
+      const sh = ss.getSheetByName(name) || ss.insertSheet(name);
+      const data = rows.map((r) => r.map((v) => (v === undefined || v === null ? '' : v)));
+      const range = sh.getRange(1, 1, data.length, data[0].length);
+      sh.getRange(1, 1, data.length, 1).setNumberFormat('@');   // 2025-01 이 날짜로 바뀌지 않게
+      range.setValues(data);
+      const extra = sh.getMaxRows() - data.length;
+      if (extra > 0) sh.getRange(data.length + 1, 1, extra, sh.getMaxColumns()).clearContent();
+      sh.setFrozenRows(1);
+    };
+    const num = (t) => [t.activeUsers, t.newUsers, t.sessions, t.screenPageViews, t.engagedSessions];
+    const head = ['활성 사용자', '신규 사용자', '세션', '페이지뷰', '참여 세션'];
+    const months = Object.keys(store.months).sort();
+    put(CFG.SHEET_MONTHLY, [['월'].concat(head, ['진행 중', '수집 시각'])].concat(months.map((m) => {
+      const x = store.months[m];
+      return [m].concat(num(x.total || {}), [x.partial ? 'Y' : '', x.updated || '']);
+    })));
+    const days = [];
+    months.forEach((m) => (store.months[m].daily || []).forEach((d) => days.push([d.date].concat(num(d)))));
+    if (days.length) put(CFG.SHEET_DAILY, [['날짜'].concat(head)].concat(days));
+    const old = ss.getSheetByName('시트1');
+    if (old && ss.getSheets().length > 1) ss.deleteSheet(old);   // 처음 손으로 만든 사본 탭
+  } catch (e) { console.warn('시트 기록 실패: ' + e.message); }
+}
+/** 수동 실행용: 지금 수집본으로 시트만 다시 쓴다. */
+function syncSheet() { writeSheet_(load_()); }
 
 function checkProperty_() {
   if (/[^0-9]/.test(CFG.PROPERTY_ID)) throw new Error('CFG.PROPERTY_ID 에 GA4 속성 ID(숫자)를 넣어 주세요.');
@@ -251,6 +307,7 @@ function collectRecent() {
     store.updated = new Date().toISOString();
     store.quota = LAST_QUOTA_ && { at: new Date().toISOString(), q: LAST_QUOTA_ };
     save_(store);
+    writeSheet_(store);
   } finally { lock.releaseLock(); }
 }
 
@@ -276,6 +333,7 @@ function collectAll() {
     store.errors = errors;
     if (!errors.length) store.updated = new Date().toISOString();
     save_(store);
+    writeSheet_(store);
     if (errors.length) throw new Error(errors.join('\n'));   // 실행 기록에 실패로 남김
   } finally { lock.releaseLock(); }
 }
@@ -313,8 +371,8 @@ function backfillSignups() {
  *  남은 토큰이 줄면 ①②③ 간격을 함께 늘리고, 한도 오류가 나면 5분 쉬면서 마지막 성공 값을 stale 로 돌려준다. */
 function liveNow_() {
   const cache = CacheService.getScriptCache();
-  if (cache.get('liveCool')) return staleLive_('조회 한도 회복 대기 중');
-  const part = (k) => { const v = cache.get(k); return v ? JSON.parse(v) : null; };
+  if (cache.get(ck_('liveCool'))) return staleLive_('조회 한도 회복 대기 중');
+  const part = (k) => { const v = cache.get(ck_(k)); return v ? JSON.parse(v) : null; };
   let fast = part('liveFast'), mid = part('liveMid'), slow = part('liveSlow');
   const assemble = (budget) => ({
     at: fast.at,
@@ -333,7 +391,7 @@ function liveNow_() {
         metrics: metrics.map((name) => ({ name })),
         limit: 20,
         returnPropertyQuota: true,
-      }, extra || {}), 'properties/' + CFG.PROPERTY_ID);
+      }, extra || {}), 'properties/' + site_().PROPERTY_ID);
       const q = resp.propertyQuota && (resp.propertyQuota.tokensPerProjectPerHour || resp.propertyQuota.tokensPerHour);
       if (q) { cost += q.consumed || 0; remaining = q.remaining; }
       return resp;
@@ -351,15 +409,15 @@ function liveNow_() {
     }
     if (!slow) { slow = { at: now(), devices: rows_(call(['deviceCategory'], ['activeUsers'])) }; fresh.slow = true; }
     const ttl = liveTtl_(remaining);
-    if (fresh.fast) cache.put('liveFast', JSON.stringify(fast), ttl);
-    if (fresh.mid) cache.put('liveMid', JSON.stringify(mid), Math.min(21600, Math.max(CFG.LIVE_MID_SEC, ttl * 6)));
-    if (fresh.slow) cache.put('liveSlow', JSON.stringify(slow), Math.min(21600, Math.max(CFG.LIVE_SLOW_SEC, ttl * 20)));
-    if (remaining != null) cache.put('liveRem', JSON.stringify({ v: remaining }), 3600);
+    if (fresh.fast) cache.put(ck_('liveFast'), JSON.stringify(fast), ttl);
+    if (fresh.mid) cache.put(ck_('liveMid'), JSON.stringify(mid), Math.min(21600, Math.max(CFG.LIVE_MID_SEC, ttl * 6)));
+    if (fresh.slow) cache.put(ck_('liveSlow'), JSON.stringify(slow), Math.min(21600, Math.max(CFG.LIVE_SLOW_SEC, ttl * 20)));
+    if (remaining != null) cache.put(ck_('liveRem'), JSON.stringify({ v: remaining }), 3600);
     const out = assemble({ cost: cost, remaining: remaining, ttl: ttl, fresh: fresh });   // 이번 요청에 쓴 토큰 / 남은 토큰 / ①의 간격(초) / 새로 받은 단계
-    cache.put('liveLast', JSON.stringify(out), 21600);
+    cache.put(ck_('liveLast'), JSON.stringify(out), 21600);
     return out;
   } catch (e) {
-    cache.put('liveCool', '1', CFG.LIVE_COOLDOWN_SEC);
+    cache.put(ck_('liveCool'), '1', CFG.LIVE_COOLDOWN_SEC);
     return staleLive_(String((e && e.message) || e));
   }
 }
@@ -369,7 +427,7 @@ function liveTtl_(remaining) {
   return CFG.LIVE_BUDGET_MIN_TTL;
 }
 function staleLive_(why) {
-  const last = CacheService.getScriptCache().get('liveLast');
+  const last = CacheService.getScriptCache().get(ck_('liveLast'));
   if (!last) return { error: why };
   const o = JSON.parse(last);
   o.stale = true;
@@ -383,10 +441,10 @@ function pageStats_(q, month) {
   q = String(q || '').replace(/[\u0000-\u001f]/g, '').trim();
   if (q.length < 2 || q.length > 120) return { error: '검색어는 2~120자로 입력해 주세요.' };
   const today = todayKst_(), cur = today.slice(0, 7);
-  if (!/^\d{4}-\d{2}$/.test(month || '') || month < CFG.START_MONTH || month > cur) month = cur;
+  if (!/^\d{4}-\d{2}$/.test(month || '') || month < site_().START_MONTH || month > cur) month = cur;
   const cache = CacheService.getScriptCache();
   const hex = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, q.toLowerCase()).map((b) => ('0' + (b & 255).toString(16)).slice(-2)).join('');
-  const ck = 'pg:' + month + ':' + hex;
+  const ck = ck_('pg:') + month + ':' + hex;
   const hit = cache.get(ck);
   if (hit) return JSON.parse(hit);
   const used = Number(cache.get('pgRate') || 0);
@@ -402,7 +460,7 @@ function pageStats_(q, month) {
     const part = (name, fn, fb) => { try { return fn(); } catch (e) { const msg = String((e && e.message) || e); if (/Exhausted|quota/i.test(msg)) throw e; out.errors.push(name + ': ' + msg.slice(0, 90)); return fb; } };
     out.total = part('total', () => q_([], ['screenPageViews', 'activeUsers', 'sessions', 'userEngagementDuration'], range, { dimensionFilter: F })[0] || {}, {});
     out.daily = part('daily', () => q_(['date'], ['screenPageViews', 'activeUsers'], range, { dimensionFilter: F, orderBys: [{ dimension: { dimensionName: 'date' } }] }).map((r) => ({ date: ymd_(r.date), screenPageViews: r.screenPageViews, activeUsers: r.activeUsers })), []);
-    out.monthly = part('monthly', () => q_(['yearMonth'], ['screenPageViews', 'activeUsers'], { startDate: CFG.START_MONTH + '-01', endDate: today }, { dimensionFilter: F, orderBys: [{ dimension: { dimensionName: 'yearMonth' } }] }).map((r) => ({ month: r.yearMonth.slice(0, 4) + '-' + r.yearMonth.slice(4), screenPageViews: r.screenPageViews, activeUsers: r.activeUsers })), []);
+    out.monthly = part('monthly', () => q_(['yearMonth'], ['screenPageViews', 'activeUsers'], { startDate: site_().START_MONTH + '-01', endDate: today }, { dimensionFilter: F, orderBys: [{ dimension: { dimensionName: 'yearMonth' } }] }).map((r) => ({ month: r.yearMonth.slice(0, 4) + '-' + r.yearMonth.slice(4), screenPageViews: r.screenPageViews, activeUsers: r.activeUsers })), []);
     out.sources = part('sources', () => q_(['sessionSourceMedium'], ['sessions', 'screenPageViews'], range, top('sessions', 10)), []);
     out.devices = part('devices', () => q_(['deviceCategory'], ['activeUsers', 'screenPageViews'], range, top('screenPageViews', 5)), []);
     out.urls = part('urls', () => q_(['pagePathPlusQueryString'], ['screenPageViews', 'activeUsers'], range, top('screenPageViews', 15)), []);
@@ -417,7 +475,7 @@ function pageStats_(q, month) {
         const a = (out.entry.byMedium[id] = out.entry.byMedium[id] || []); if (a.length < 8) a.push({ k: r.sessionSourceMedium, s: r.sessions });
       });
     }, null);
-    out.defs = CFG.CONVERSIONS.map((d) => ({ id: d.id, name: d.name }));
+    out.defs = site_().CONVERSIONS.map((d) => ({ id: d.id, name: d.name }));
     cache.put(ck, JSON.stringify(out), month === cur ? CFG.PAGE_CACHE_SEC : 3600);
     return out;
   } catch (e) {
@@ -524,14 +582,18 @@ function signupsData_() {
   }
 }
 
-/** 웹앱: ?mode=live | ?mode=cur | ?mode=page&q=..&month=.. | (기본) 전체. */
+/** 웹앱: ?mode=live | ?mode=cur | ?mode=page&q=..&month=.. | (기본) 전체.
+ *  &site=oncore 를 붙이면 같은 모드를 온코어 GA4 로 답한다 (analytics 대시보드의 온코어 화면). 견적·회원가입 실데이터는 아이티켓만 있다.
+ *  ?mode=oncore 는 ad-insight 용 가벼운 온코어 월별 값 (기기·주문 완료만) — 예전 응답 형식 그대로. */
 function doGet(e) {
-  const mode = e && e.parameter && e.parameter.mode;
+  const p = (e && e.parameter) || {};
+  const mode = p.mode;
   let body;
   try {
-    if (mode === 'live') body = liveNow_();
-    else if (mode === 'page') body = pageStats_(e.parameter.q, e.parameter.month);
-    else if (mode === 'oncore') body = Object.assign({ site: 'oncore' }, loadOncore_());   // 온코어 GA4 (ad-insight 대시보드용, 아래 collectOncore). site 로 아이티켓 응답과 구분한다
+    if (p.site === 'oncore') body = Object.assign({ site: 'oncore' }, withSite_('oncore', () => oncoreGet_(mode, p)));
+    else if (mode === 'live') body = liveNow_();
+    else if (mode === 'page') body = pageStats_(p.q, p.month);
+    else if (mode === 'oncore') body = Object.assign({ site: 'oncore' }, oncoreSlim_(loadOncore_()));   // ad-insight 대시보드용. site 로 아이티켓 응답과 구분한다
     else if (mode === 'cur') {
       const store = load_(), cur = todayKst_().slice(0, 7), prev = addMonth_(cur, -1);
       const months = {};
@@ -601,56 +663,77 @@ function checkInternalFilter() {
   Logger.log(out.join('\n'));
 }
 
-/* ── 온코어 GA4 (ad-insight 대시보드의 온코어 기기별 통계·구매 상세용) ──
- * 아이티켓 수집(CFG · q_ · collectMonth_ · collectAll)과 따로 돈다. 속성·저장 파일·트리거가 모두 달라 실패해도 아이티켓 데이터에 영향이 없다.
- * 온코어는 견적 완료 화면이 없어(제출 후 알림 → 목록으로 이동) 견적 전환은 세지 않고, 주문 완료 화면만 전환으로 센다.
+/* ── 온코어 GA4 (analytics 대시보드의 온코어 화면 · ad-insight 의 온코어 기기별 통계·구매 상세) ──
+ * 아이티켓 수집(collectRecent · collectAll)과 따로 돈다. 속성·저장 파일·트리거가 모두 달라 실패해도 아이티켓 데이터에 영향이 없다.
+ * 월별 값은 아이티켓 월별 파일과 같은 형식이다 — collectMonth_ 를 온코어 속성·전환 정의(withSite_)로 실행한다.
+ * 온코어는 견적 완료 화면이 없어(제출 후 알림 → 목록으로 이동) 견적 전환은 세지 않고, 회원가입·주문 완료 화면만 전환으로 센다.
+ * 측정 전 달(세션 0)은 조회 1번으로 빈 달만 저장한다 (온코어 GA4 는 2026-10-13 부터 측정).
  * 처음 한 번: 에디터에서 collectOncore 실행(과거 월 채움) → setupOncoreTrigger 실행(3시간마다 당월·전월 갱신).
- * 대시보드는 웹앱 ?mode=oncore 로 받는다 (doGet). 웹앱은 "배포 관리 → 새 버전"으로 다시 배포해야 이 모드가 생긴다.
+ * 대시보드는 웹앱 &site=oncore(analytics) · ?mode=oncore(ad-insight) 로 받는다 (doGet). 코드를 고치면 "배포 관리 → 새 버전"으로 다시 배포.
  */
 const ONCORE = {
   PROPERTY_ID: '544861334',               // GA4 속성 'on-core' (스트림 '온코어(주)' https://on-core.co.kr)
   START_MONTH: '2025-01',                 // 이 달부터 묻는다. 측정 전 달은 세션 0 으로 저장되고 대시보드는 '측정 전'으로 본다
   FILE_NAME: 'oncore-analytics-data.json',
-  SCHEMA: 1,                              // 수집 항목이 바뀌면 올린다 → 과거 월을 다시 채움
-  ORDER_PATH: '/order/order_end.php',     // 주문 완료 화면 (고도몰 공통)
+  SCHEMA: 2,                              // 수집 항목이 바뀌면 올린다 → 과거 월을 다시 채움 (2: 아이티켓과 같은 전체 형식 — 페이지·유입·전환·상품)
+  TOP_ROWS: 50,
+  CONVERSIONS: [
+    { id: 'signup', name: '회원가입 완료', path: '/member/join_ok.php' },
+    { id: 'order', name: '주문 완료', path: '/order/order_end.php' },   // 고도몰 공통 주문 완료 화면
+  ],
   BUDGET_MS: 3 * 60 * 1000,
 };
-function oq_(dims, metrics, range, extra) {
-  const req = Object.assign({ dateRanges: [range], dimensions: dims.map((name) => ({ name })), metrics: metrics.map((name) => ({ name })), limit: 1000 }, extra || {});
-  return rows_(AnalyticsData.Properties.runReport(req, 'properties/' + ONCORE.PROPERTY_ID));
+
+/** 한 달 치 (아이티켓 collectMonth_ 와 같은 형식). 세션이 없는 달은 빈 달(empty)로 둔다 */
+function oncoreMonth_(m, today, reuse) {
+  return withSite_('oncore', () => {
+    const range = { startDate: m + '-01', endDate: m === today.slice(0, 7) ? today : lastDay_(m) };
+    const t = q_([], M, range)[0] || {};
+    if (!t.sessions) {
+      const zero = {};
+      M.forEach((k) => (zero[k] = 0));
+      return { v: ONCORE.SCHEMA, month: m, partial: m === today.slice(0, 7), updated: new Date().toISOString(), empty: true, total: zero, daily: [] };
+    }
+    return collectMonth_(m, today, reuse);
+  });
 }
-/** 한 달 치: 방문(기기·기기×채널)과 주문 완료 세션(기기·기기×채널·출처/매체). 형식은 아이티켓 월별 파일(devices·deviceChannels·conv.by*)과 같다 */
-function oncoreMonth_(m, today) {
-  const range = { startDate: m + '-01', endDate: m === today.slice(0, 7) ? today : lastDay_(m) };
-  const bySessions = { orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 500 };
-  const orderOnly = Object.assign({ dimensionFilter: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'EXACT', value: ONCORE.ORDER_PATH } } } }, bySessions);
-  // 주문 완료 화면을 본 세션 — k 는 'mobile' · 'mobile | Paid Search' · 'google / cpc'
-  const conv = (dims) => {
-    const acc = {};
-    oq_(['pagePath'].concat(dims), ['sessions'], range, orderOnly).forEach((r) => {
-      const k = dims.map((d) => r[d]).join(' | ');
-      acc[k] = (acc[k] || 0) + r.sessions;
-    });
-    return Object.keys(acc).map((k) => ({ k: k, s: acc[k] })).sort((a, b) => b.s - a.s);
-  };
-  const t = oq_([], ['sessions', 'activeUsers'], range)[0] || {};
-  return {
-    v: ONCORE.SCHEMA,
-    month: m,
-    partial: m === today.slice(0, 7),
-    updated: new Date().toISOString(),
-    total: { sessions: t.sessions || 0, activeUsers: t.activeUsers || 0 },
-    daily: oq_(['date'], ['sessions'], range, { orderBys: [{ dimension: { dimensionName: 'date' } }] }).map((r) => ({ date: ymd_(r.date), sessions: r.sessions })),
-    devices: oq_(['deviceCategory'], ['activeUsers', 'sessions'], range, bySessions),
-    deviceChannels: oq_(['deviceCategory', 'sessionDefaultChannelGroup'], ['sessions', 'activeUsers', 'engagedSessions'], range, bySessions),
-    conv: {
-      defs: [{ id: 'order', name: '주문 완료', path: ONCORE.ORDER_PATH }],
-      byDevice: { order: conv(['deviceCategory']) },
-      byDeviceChannel: { order: conv(['deviceCategory', 'sessionDefaultChannelGroup']) },
-      byMedium: { order: conv(['sessionSourceMedium']) },
-    },
-  };
+
+/** ad-insight 용 가벼운 형식 (예전 SCHEMA 1 과 같은 항목만): 방문(기기·기기×채널)과 주문 완료 세션(기기·기기×채널·출처/매체) */
+function oncoreSlim_(store) {
+  const months = {};
+  const ks = (rows) => (rows || []).map((r) => ({ k: r.k, s: r.s }));
+  Object.keys(store.months || {}).forEach((m) => {
+    const x = store.months[m], c = x.conv;
+    months[m] = {
+      v: x.v, month: x.month, partial: x.partial, updated: x.updated,
+      total: { sessions: (x.total && x.total.sessions) || 0, activeUsers: (x.total && x.total.activeUsers) || 0 },
+      daily: (x.daily || []).map((r) => ({ date: r.date, sessions: r.sessions })),
+      devices: x.devices || [],
+      deviceChannels: x.deviceChannels || [],
+      conv: c ? {
+        defs: [{ id: 'order', name: '주문 완료', path: '/order/order_end.php' }],
+        byDevice: { order: ks(c.byDevice && c.byDevice.order) },
+        byDeviceChannel: { order: ks(c.byDeviceChannel && c.byDeviceChannel.order) },
+        byMedium: { order: ks(c.byMedium && c.byMedium.order) },
+      } : undefined,
+    };
+  });
+  return { updated: store.updated, errors: store.errors || [], months: months };
 }
+
+/** &site=oncore 요청 (withSite_('oncore') 안에서 불린다): live · page · cur · (기본) 전체 */
+function oncoreGet_(mode, p) {
+  if (mode === 'live') return liveNow_();
+  if (mode === 'page') return pageStats_(p.q, p.month);
+  const store = loadOncore_();
+  if (mode === 'cur') {
+    const cur = todayKst_().slice(0, 7), prev = addMonth_(cur, -1), months = {};
+    [cur, prev].forEach((m) => { if (store.months && store.months[m]) months[m] = store.months[m]; });
+    return { updated: store.updated, months: months, godoQuotes: null, godoSignups: null };
+  }
+  return store;
+}
+
 // 이름이 아니라 ID 로 연다 (같은 이름의 사본·바로가기를 잡지 않게). 처음 수집할 때 만들고 ID 를 스크립트 속성 ONCORE_FILE_ID 에 둔다
 function oncoreFile_(create) {
   const props = PropertiesService.getScriptProperties(), id = props.getProperty('ONCORE_FILE_ID');
@@ -667,7 +750,7 @@ function loadOncore_() {
   const text = f.getBlob().getDataAsString();
   return text.trim() ? JSON.parse(text) : { months: {} };
 }
-/** 3시간마다: 당월·전월은 항상 새로, 빠진/구버전 과거 월은 시간 되는 만큼 채운다 */
+/** 3시간마다: 당월·전월은 항상 새로, 빠진/구버전 과거 월은 시간 되는 만큼 채운다 (한 달마다 저장 — 시간 초과로 끊겨도 받은 달은 남는다) */
 function collectOncore() {
   const started = Date.now(), today = todayKst_(), cur = today.slice(0, 7), prev = addMonth_(cur, -1);
   const store = loadOncore_();
@@ -677,14 +760,15 @@ function collectOncore() {
   const stale = (m) => !store.months[m] || store.months[m].v !== ONCORE.SCHEMA;
   const queue = [cur, prev].filter((m) => all.indexOf(m) >= 0).concat(all.filter((m) => m !== cur && m !== prev && stale(m)));
   const errors = [];
+  const save = () => oncoreFile_(true).setContent(JSON.stringify(store));
   for (const m of queue) {
     if (Date.now() - started > ONCORE.BUDGET_MS) break;   // 남은 달은 다음 실행에서 이어서
-    try { store.months[m] = oncoreMonth_(m, today); }
+    try { store.months[m] = oncoreMonth_(m, today, store.months[m]); store.updated = new Date().toISOString(); save(); }
     catch (e) { errors.push(m + ': ' + e.message); if (/Exhausted|quota/i.test(String(e.message))) break; }
   }
   store.updated = new Date().toISOString();
   store.errors = errors;
-  oncoreFile_(true).setContent(JSON.stringify(store));
+  save();
   if (errors.length) throw new Error(errors.join('\n'));   // 실행 기록에 실패로 남김
 }
 /** 한 번만 실행: collectOncore 3시간 트리거. 다시 실행해도 중복되지 않는다 (아이티켓 트리거는 건드리지 않음) */

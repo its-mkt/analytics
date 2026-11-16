@@ -1,4 +1,6 @@
 import type { InternalFilterConfig } from '../types/analytics';
+import { Note } from './Note';
+import { Tag } from './Tag';
 
 interface InternalFilterNoteProps {
   internal: InternalFilterConfig;
@@ -20,8 +22,8 @@ export function InternalFilterNote({
   if (!showInternalNote) return null;
 
   return (
-    <div className="note flex-note">
-      <span className="tag warn">내부 IP</span>
+    <Note className="flex-note">
+      <Tag tone="warn">내부 IP</Tag>
       <span>
         {st === 'active' && since ? (
           <>
@@ -37,6 +39,6 @@ export function InternalFilterNote({
           </>
         )}
       </span>
-    </div>
+    </Note>
   );
 }

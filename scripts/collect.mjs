@@ -112,8 +112,47 @@ if (process.env.GA4_WEBAPP_URL) {
     const total = Object.values(store.godoQuotes.monthly || {}).reduce((a, v) => a + v, 0);
     console.log(`고도몰 견적 건수 저장 완료 (전체 ${total}건, 기준일 ${store.godoQuotes.asOf || '알 수 없음'})`);
   }
+  // 회원가입 실건수(고도몰 회원 DB)도 같이 남긴다 — 빌드에 심는 값이라 화면이 웹앱을 못 불러도 최신에 가깝게 보인다.
+  // 달마다 지금까지 본 값 중 큰 값을 남긴다: 회원 DB 는 1년 넘게 접속 안 한 회원이 휴면 보관소로 옮겨지며 오래된 달일수록 줄어드는데,
+  // 최근 달은 관리자 통계와 같으므로 정확할 때 기록해 두면 나중에 줄어도 그 값을 지킨다 (2026-11-16 관리자 통계 대조로 확인).
+  if (store.godoSignups && store.godoSignups.monthly && Object.keys(store.godoSignups.monthly).length) {
+    const refDir = path.join(ROOT, 'data', 'ref');
+    fs.mkdirSync(refDir, { recursive: true });
+    const refFile = path.join(refDir, 'godomall-signups.json');
+    let kept = {};
+    try { kept = JSON.parse(fs.readFileSync(refFile, 'utf8')).monthly || {}; } catch { /* 처음 */ }
+    const monthly = { ...store.godoSignups.monthly };
+    for (const [m, v] of Object.entries(kept)) if (Number(v) > (monthly[m] ?? 0)) monthly[m] = Number(v);
+    fs.writeFileSync(refFile, JSON.stringify({ ...store.godoSignups, monthly, basis: '달별 최댓값 (회원 DB 조회값이 휴면 분리로 줄어도 유지)' }, null, 2));
+    const total = Object.values(monthly).reduce((a, v) => a + v, 0);
+    console.log(`고도몰 회원가입 건수 저장 완료 (전체 ${total}건, 기준일 ${store.godoSignups.asOf || '알 수 없음'})`);
+  }
+  const oncoreErr = await collectOncoreFromWebapp(process.env.GA4_WEBAPP_URL.trim());
   if ((store.errors || []).length) { console.error('수집기 오류:', store.errors.join(' / ')); process.exit(1); }
+  if (oncoreErr) { console.error('온코어 수집기 오류:', oncoreErr); process.exit(1); }
   process.exit(0);
+}
+
+/** 온코어 GA4 (웹앱 &site=oncore) → data/oncore/ga4/YYYY-MM.json. 설정의 oncore.startMonth 이후 세션이 있는 달만 저장한다.
+ *  수집기에 온코어 모드가 아직 없으면(응답에 site: 'oncore' 가 없음) 건너뛴다. 돌려주는 값은 오류 문구(없으면 null) */
+async function collectOncoreFromWebapp(base) {
+  const oc = cfg.oncore;
+  if (!oc) return null;
+  const dir = path.join(DATA, 'oncore', 'ga4');
+  try {
+    const res = await fetch(`${base}?site=oncore`, { redirect: 'follow' });
+    const store = JSON.parse(await res.text());
+    if (store.site !== 'oncore') { console.warn('웹앱에 온코어 모드가 없어 온코어 수집을 건너뜁니다 (Code.gs 새 버전 배포 필요).'); return null; }
+    const got = Object.keys(store.months || {}).filter((m) => m >= (oc.startMonth || '0000-00') && store.months[m].total?.sessions > 0 && !store.months[m].empty).sort();
+    const full = got.filter((m) => store.months[m].pages);   // 예전 형식(기기·주문만) 달은 대시보드가 그리지 못하므로 저장하지 않는다
+    fs.mkdirSync(dir, { recursive: true });
+    for (const m of full) fs.writeFileSync(path.join(dir, `${m}.json`), JSON.stringify(store.months[m]));
+    fs.writeFileSync(path.join(dir, '_meta.json'), JSON.stringify({ updated: store.updated || new Date().toISOString(), failed: (store.errors || []).length }));
+    console.log(`온코어 ${full.length}개월 받음${got.length > full.length ? ` (예전 형식 ${got.length - full.length}개월은 수집기 갱신 대기)` : ''}`);
+    return (store.errors || []).length ? store.errors.join(' / ') : null;
+  } catch (e) {
+    return `온코어 응답을 읽지 못했습니다: ${e.message}`;
+  }
 }
 
 let ctx = null, failed = 0;

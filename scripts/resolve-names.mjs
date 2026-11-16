@@ -6,7 +6,11 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATA = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data');
-const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'ga4.json'), 'utf8'));
+const allCfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'ga4.json'), 'utf8'));
+// SITE=oncore 이면 온코어 쇼핑몰(설정의 oncore.siteUrl)에서 읽어 data/oncore/names.json 에 저장한다
+const SITE = process.env.SITE === 'oncore' ? 'oncore' : 'itket';
+const cfg = SITE === 'oncore' ? { ...allCfg, ...allCfg.oncore } : allCfg;
+const SITE_DATA = SITE === 'oncore' ? path.join(DATA, 'oncore') : DATA;
 const BASE = (cfg.siteUrl || 'https://itket.com').replace(/\/$/, '');
 const MAX_NEW = 250;
 const SHOW = { goods: 30, categories: 30, boards: 10 };           // 대시보드에 보이는 순위까지만
@@ -22,21 +26,21 @@ function nameOf(kind, html) {
   if (kind === 'goods') m = html.match(/name=["']twitter:title["'][^>]*content=["']([^"']+)/i) || html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i);
   else m = html.match(/<h2[^>]*>\s*([^<]{1,60}?)\s*<\/h2>/i) || html.match(/<title>([^<]+)<\/title>/i);   // 카테고리·게시판은 페이지 제목 h2
   const n = m ? dec(m[1]) : '';
-  return /^아이티켓 - /.test(n) ? '' : n;                                 // 사이트 공통 제목이면 이름 없음 처리
+  return /^(아이티켓|온코어) - /.test(n) ? '' : n;                          // 사이트 공통 제목이면 이름 없음 처리
 }
 
-const file = path.join(DATA, 'names.json');
+const file = path.join(SITE_DATA, 'names.json');
 const names = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};
 for (const k of Object.keys(URL_OF)) names[k] ||= {};
 
-const dir = path.join(DATA, 'ga4');
+const dir = path.join(SITE_DATA, 'ga4');
 const todo = new Map();
 for (const f of fs.existsSync(dir) ? fs.readdirSync(dir).filter((x) => /^\d{4}-\d{2}\.json$/.test(x)).sort().reverse() : []) {
   const m = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
   for (const k of Object.keys(URL_OF)) for (const r of (m[k] || []).slice(0, SHOW[k])) if (names[k][r.id] === undefined) todo.set(`${k}:${r.id}`, [k, r.id]);
 }
 const list = [...todo.values()].slice(0, MAX_NEW);
-console.log(`이름 조회 대상 ${todo.size}개 중 ${list.length}개`);
+console.log(`[${SITE}] 이름 조회 대상 ${todo.size}개 중 ${list.length}개`);
 let ok = 0, fail = 0;
 for (let i = 0; i < list.length; i += 5) {
   await Promise.all(list.slice(i, i + 5).map(async ([k, id]) => {
@@ -48,5 +52,6 @@ for (let i = 0; i < list.length; i += 5) {
     } catch { fail++; }                                        // 실패는 저장하지 않아 다음에 다시 시도
   }));
 }
+fs.mkdirSync(SITE_DATA, { recursive: true });
 fs.writeFileSync(file, JSON.stringify(names));
 console.log(`이름 확보 ${ok}, 실패/빈 값 ${fail}`);

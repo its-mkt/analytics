@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChartWidth } from '../hooks/useChartWidth';
 import { axisC, fmt, fmtC } from '../utils/format';
+import { EmptyState } from './EmptyState';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const dow = (d: string) => new Date(`${d}T00:00:00`).getDay();
@@ -35,11 +36,11 @@ interface StatItem {
 
 function ChartStats({ items }: { items: StatItem[] }) {
   return (
-    <div className="kst">
+    <div className="chart-stats">
       {items.map((item) => (
         <div key={item.label}>
-          <div className="l">{item.label}</div>
-          <div className="v">
+          <div className="label">{item.label}</div>
+          <div className="value">
             {item.value}
             {item.sub && <small>{item.sub}</small>}
           </div>
@@ -69,7 +70,7 @@ function ChartGrid({ W, pl, pr, mob, nice, y }: ChartGridProps) {
           patternUnits="userSpaceOnUse"
           patternTransform="rotate(45)"
         >
-          <rect className="phb" width="3" height="6" />
+          <rect className="partial-fill" width="3" height="6" />
         </pattern>
       </defs>
       {[0, 1, 2, 3, 4].map((i) => {
@@ -78,7 +79,7 @@ function ChartGrid({ W, pl, pr, mob, nice, y }: ChartGridProps) {
         return (
           <g key={i}>
             <line
-              className="g"
+              className="grid-line"
               x1={pl}
               x2={W - pr}
               y1={yy}
@@ -109,7 +110,7 @@ function ChartAverageLine({ W, pl, pr, mob, ay, label }: ChartAverageLineProps) 
     <>
       <line className="avg" x1={pl} x2={W - pr} y1={ay} y2={ay} />
       <text
-        className="avt"
+        className="avg-label"
         x={mob ? pl + 6 : W - pr + 8}
         y={mob ? ay - 5 : ay + 4}
         textAnchor="start"
@@ -283,14 +284,14 @@ export function DailyChart({ vals, dates, unit }: DailyChartProps) {
   if (!n) {
     return (
       <div ref={wrapRef}>
-        <div className="empty">데이터 없음</div>
+        <EmptyState />
       </div>
     );
   }
   if (Math.max(...vals) <= 0) {
     return (
       <div ref={wrapRef}>
-        <div className="empty">이 기간에 기록된 값이 없습니다 (모든 날짜 0)</div>
+        <EmptyState>이 기간에 기록된 값이 없습니다 (모든 날짜 0)</EmptyState>
       </div>
     );
   }
@@ -333,7 +334,7 @@ export function DailyChart({ vals, dates, unit }: DailyChartProps) {
         ]}
       />
 
-      <div className="dc" id="dc">
+      <div className="chart" id="dc">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${W} ${h}`}
@@ -346,7 +347,7 @@ export function DailyChart({ vals, dates, unit }: DailyChartProps) {
           <ChartGrid W={W} pl={pl} pr={pr} mob={mob} nice={nice} y={y} />
 
           <rect
-            className={`hov ${hoverIdx != null ? 'on' : ''}`}
+            className={`hover-band ${hoverIdx != null ? 'on' : ''}`}
             x={hoverIdx != null ? pl + hoverIdx * bw : 0}
             y={pt - 14}
             width={bw}
@@ -361,9 +362,9 @@ export function DailyChart({ vals, dates, unit }: DailyChartProps) {
             const w = dow(d);
             const we = w === 0 || w === 6;
             const cls = [
-              'd1',
-              i === iToday ? 'pt' : we ? 'we' : '',
-              i === iMax && rmx > 0 ? 'mx' : '',
+              'day-bar',
+              i === iToday ? 'partial' : we ? 'weekend' : '',
+              i === iMax && rmx > 0 ? 'max' : '',
             ]
               .filter(Boolean)
               .join(' ');
@@ -379,7 +380,7 @@ export function DailyChart({ vals, dates, unit }: DailyChartProps) {
                 />
                 {(showAll || i === iMax || (!mob && i === n - 1)) && (
                   <text
-                    className={`vl ${i === iMax ? 'mx' : ''}`}
+                    className={`bar-value ${i === iMax ? 'max' : ''}`}
                     x={x + bw / 2}
                     y={yy - 5}
                     textAnchor="middle"
@@ -393,7 +394,7 @@ export function DailyChart({ vals, dates, unit }: DailyChartProps) {
                       {+d.slice(8)}
                     </text>
                     <text
-                      className={`wd-lbl ${we ? 'wk' : ''}`}
+                      className={`wd-lbl ${we ? 'weekend' : ''}`}
                       x={x + bw / 2}
                       y={h - 5}
                       textAnchor="middle"
@@ -418,7 +419,7 @@ export function DailyChart({ vals, dates, unit }: DailyChartProps) {
           {vals.map((_, i) => (
             <rect
               key={i}
-              className="hit"
+              className="hit-area"
               data-i={i}
               x={pl + i * bw}
               y={pt - 14}
@@ -440,7 +441,7 @@ export function DailyChart({ vals, dates, unit }: DailyChartProps) {
         />
       </div>
 
-      <div className="leg">
+      <div className="legend">
         <span>
           <i className="s-bar" />
           평일
@@ -517,7 +518,7 @@ export function MonthlyChart({
   if (!idx.length || Math.max(...allv) <= 0) {
     return (
       <div ref={wrapRef}>
-        <div className="empty">이 기간에 기록된 값이 없습니다</div>
+        <EmptyState>이 기간에 기록된 값이 없습니다</EmptyState>
       </div>
     );
   }
@@ -546,7 +547,7 @@ export function MonthlyChart({
     <div ref={wrapRef}>
       <ChartStats items={statItems} />
 
-      <div className="dc" id="dc">
+      <div className="chart" id="dc">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${W} ${h}`}
@@ -559,7 +560,7 @@ export function MonthlyChart({
           <ChartGrid W={W} pl={pl} pr={pr} mob={mob} nice={nice} y={y} />
 
           <rect
-            className={`hov ${hoverIdx != null ? 'on' : ''}`}
+            className={`hover-band ${hoverIdx != null ? 'on' : ''}`}
             x={hoverIdx != null ? pl + hoverIdx * bw : 0}
             y={pt - 14}
             width={bw}
@@ -579,7 +580,7 @@ export function MonthlyChart({
                 {have[i] && (
                   <>
                     <rect
-                      className={`d1 ${partial[i] ? 'pt' : ''} ${i === iMax ? 'mx' : ''}`}
+                      className={`day-bar ${partial[i] ? 'partial' : ''} ${i === iMax ? 'max' : ''}`}
                       x={x + bw * 0.18}
                       y={yy}
                       width={bw * 0.64}
@@ -588,7 +589,7 @@ export function MonthlyChart({
                     />
                     {(bw >= 40 || i === iMax || i === lastI) && (
                       <text
-                        className={`vl ${i === iMax ? 'mx' : ''}`}
+                        className={`bar-value ${i === iMax ? 'max' : ''}`}
                         x={x + bw / 2}
                         y={yy - 5}
                         textAnchor="middle"
@@ -615,7 +616,7 @@ export function MonthlyChart({
             have[i] ? (
               <rect
                 key={i}
-                className="hit"
+                className="hit-area"
                 data-i={i}
                 x={pl + i * bw}
                 y={pt - 14}
@@ -645,7 +646,7 @@ export function MonthlyChart({
         />
       </div>
 
-      <div className="leg">
+      <div className="legend">
         <span>
           <i className="s-bar" />
           월 합계

@@ -7,6 +7,8 @@ interface PeriodNavProps {
   minAvailableMonth?: string;
   maxAvailableMonth: string;
   onSelectPeriod: (period: string) => void;
+  /** 기간 선택 옆 한 줄 안내 (예: 진행 중인 달의 집계 기준) — ad-insight 기간 줄과 같은 자리 */
+  note?: string;
 }
 
 export const PeriodNav: React.FC<PeriodNavProps> = ({
@@ -15,8 +17,8 @@ export const PeriodNav: React.FC<PeriodNavProps> = ({
   minAvailableMonth,
   maxAvailableMonth,
   onSelectPeriod,
+  note,
 }) => {
-  const isCurrentMonth = selectedPeriod === maxAvailableMonth;
   const minYear = [...years].sort()[0] || maxAvailableMonth.slice(0, 4);
 
   return (
@@ -28,17 +30,7 @@ export const PeriodNav: React.FC<PeriodNavProps> = ({
           max={maxAvailableMonth}
           onChange={onSelectPeriod}
         />
-      </div>
-
-      <div className="period-nav-right">
-        {isCurrentMonth ? (
-          <span className="period-status-badge current">
-            <span className="pdot" />
-            실시간
-          </span>
-        ) : (
-          <span className="period-status-badge past">과거 실적</span>
-        )}
+        {note && <span className="period-nav-note">{note}</span>}
       </div>
     </div>
   );

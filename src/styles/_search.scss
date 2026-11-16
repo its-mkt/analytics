@@ -1,0 +1,199 @@
+// 헤더 검색 창 (components/SearchDialog.tsx) — ad-insight 의 검색 창과 같은 모양
+.search-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12vh 1rem 1rem;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--bg) 65%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.card.search-dialog {
+  width: 100%;
+  max-width: 42rem;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 76vh;
+  overflow: hidden;
+  border: 1px solid var(--line2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), 0 1px 4px rgba(0, 0, 0, 0.1);
+
+  .sd-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--sub);
+    flex-shrink: 0;
+  }
+
+  .sd-input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 1rem;
+    padding: 0.25rem;
+    outline: none;
+    box-shadow: none;
+
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
+
+  .sd-close,
+  .sd-recent-del,
+  .sd-recent-clear {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem;
+    border: 0;
+    background: transparent;
+    color: var(--sub);
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--ink);
+    }
+  }
+
+  .sd-hint {
+    margin: 0;
+    padding: 1rem;
+    font-size: 0.875rem;
+    color: var(--sub);
+    line-height: 1.6;
+
+    code {
+      padding: 0 0.25rem;
+      border-radius: 0.25rem;
+      background: var(--line);
+      color: var(--ink2);
+      font-size: 0.8125rem;
+    }
+  }
+
+  .sd-results {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0.25rem 0 0.5rem;
+  }
+
+  .sd-group h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0.625rem 1rem 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--sub);
+
+    span {
+      color: var(--ink2);
+    }
+
+    .sd-recent-clear {
+      margin-left: auto;
+      font-size: 0.75rem;
+      font-weight: 400;
+    }
+  }
+
+  .sd-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: var(--h-40);
+    padding: 0 1rem;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible,
+    &.on {
+      background: var(--accbg);
+      outline: none;
+    }
+  }
+
+  .sd-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sd-sub {
+    margin-left: 0.5rem;
+    color: var(--sub);
+    font-size: 0.75rem;
+  }
+
+  .sd-meta {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--sub);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sd-recent-row {
+    display: flex;
+    align-items: center;
+    padding-right: 0.75rem;
+
+    .sd-row {
+      justify-content: flex-start;
+      gap: 0.5rem;
+      color: var(--ink2);
+    }
+  }
+
+  .sd-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    height: var(--h-48);
+    padding: 0 1rem;
+    border: 0;
+    border-top: 1px solid var(--line);
+    background: transparent;
+    color: var(--acc);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-backdrop {
+    padding: 0.75rem 0.75rem 0;
+  }
+
+  .card.search-dialog {
+    max-height: calc(100dvh - 1.5rem);
+  }
+}

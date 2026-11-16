@@ -1,5 +1,5 @@
 {
-  "name": "itket-analytics",
+  "name": "analytics",
   "private": true,
   "type": "module",
   "packageManager": "yarn@1.22.22",

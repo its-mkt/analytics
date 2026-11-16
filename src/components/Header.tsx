@@ -1,82 +1,70 @@
-import { FileSpreadsheet, Menu, Moon, Sun } from 'lucide-react';
+import { FileSpreadsheet, Menu, Moon, Search, Sun } from 'lucide-react';
+import { Button } from './Button';
 
 interface HeaderProps {
-  isPage: boolean;
-  sel: string;
-  updated: string | null;
+  /** 지금 화면 이름 (경로의 마지막 칸) — 화면 머리말과 같은 이름 */
+  title: string;
   drawerOpen: boolean;
   isDark: boolean;
   onOpenDrawer: () => void;
   onToggleTheme: () => void;
+  /** 헤더 검색 버튼 → 검색 창 */
+  onSearch: () => void;
   onExportExcel?: () => void;
 }
 
-export function Header({
-  isPage,
-  sel,
-  updated,
-  drawerOpen,
-  isDark,
-  onOpenDrawer,
-  onToggleTheme,
-  onExportExcel,
-}: HeaderProps) {
-  const crumb = isPage
-    ? '페이지 분석'
-    : sel
-      ? sel.length === 4
-        ? `${sel}년 연간`
-        : `${sel.slice(0, 4)}년 ${+sel.slice(5)}월`
-      : '';
-
-  let updText = '아직 수집된 데이터가 없습니다';
-  let stale = false;
-  if (updated) {
-    const u = new Date(updated);
-    const h = (Date.now() - u.getTime()) / 36e5;
-    const s = u.toLocaleString('ko-KR', {
-      timeZone: 'Asia/Seoul',
-      month: 'numeric',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-    const rel =
-      h < 1 ? '방금' : h < 24 ? `${Math.round(h)}시간 전` : `${Math.round(h / 24)}일 전`;
-    stale = h > 6;
-    updText = `마지막 갱신 ${s} (${rel})${stale ? ' · 갱신이 지연되고 있습니다' : ''}`;
-  }
-
+/**
+ * 상단 헤더 — ad-insight 와 같은 구성: 왼쪽 '대시보드 이름 / 화면 이름', 오른쪽 검색 · (엑셀) · 테마.
+ * 마지막 갱신 시각은 ad-insight 처럼 사이드바 아래에 둔다.
+ */
+export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme, onSearch, onExportExcel }: HeaderProps) {
   return (
     <header className="top">
-      <button
-        type="button"
-        className="btn ic burger"
+      <Button
+        className="icon burger"
         id="burger"
         aria-label="메뉴 열기"
         aria-expanded={drawerOpen}
         aria-controls="side"
         onClick={onOpenDrawer}
-      >
-        <Menu size={18} aria-hidden="true" />
-      </button>
+        icon={<Menu size={18} aria-hidden="true" />}
+      />
 
       <h1>
-        <span className="ttx">대시보드 </span>
+        <span className="crumb-root">방문 &amp; 전환 대시보드 </span>
         <span className="crumb" id="crumb">
-          {crumb}
+          {title}
         </span>
       </h1>
-      <span className="sp" />
-      <span className={`upd ${stale ? 'stale' : ''}`} id="upd">
-        {updText}
-      </span>
+
+      <span className="spacer" />
 
       <div className="acts">
+        <Button
+          className="icon top-search"
+          id="btnSearch"
+          aria-label="검색"
+          title="검색 (Ctrl+K)"
+          onClick={onSearch}
+          icon={<Search size={18} aria-hidden="true" />}
+        />
+
+        {onExportExcel && (
+          <Button
+            className="btn-excel"
+            id="btnExportExcel"
+            title="현재 화면의 실적 데이터를 엑셀(.xlsx)로 다운로드합니다"
+            onClick={onExportExcel}
+            icon={<FileSpreadsheet size={15} aria-hidden="true" />}
+          >
+            엑셀 다운로드
+          </Button>
+        )}
+
+        {/* 테마 스위치 — 모양이 달라(.tgl) 공용 Button 이 아닌 전용 마크업 */}
         <button
           type="button"
-          className="tgl"
+          className="toggle"
           id="theme"
           role="switch"
           aria-checked={isDark}
@@ -84,26 +72,14 @@ export function Header({
           title={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
           onClick={onToggleTheme}
         >
-          <span className="tgl-icon tgl-sun" aria-hidden="true">
+          <span className="toggle-icon toggle-sun" aria-hidden="true">
             <Sun size={12} strokeWidth={2.4} />
           </span>
-          <span className="tgl-icon tgl-moon" aria-hidden="true">
+          <span className="toggle-icon toggle-moon" aria-hidden="true">
             <Moon size={12} strokeWidth={2.4} />
           </span>
-          <i className="tgl-thumb" aria-hidden="true" />
+          <i className="toggle-thumb" aria-hidden="true" />
         </button>
-        {onExportExcel && (
-          <button
-            type="button"
-            className="btn btn-excel"
-            id="btnExportExcel"
-            title="현재 화면의 실적 데이터를 엑셀(.xlsx)로 다운로드합니다"
-            onClick={onExportExcel}
-          >
-            <FileSpreadsheet size={15} aria-hidden="true" />
-            <span>엑셀 다운로드</span>
-          </button>
-        )}
       </div>
     </header>
   );

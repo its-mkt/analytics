@@ -1,49 +1,39 @@
-import {
-  Skeleton,
-  SkeletonChartCard,
-  SkeletonKpiCards,
-  SkeletonTableCard,
-} from './Skeleton';
+import type { ViewTab } from '../types/analytics';
+import { SkeletonChartCard, SkeletonKpiCards, SkeletonTableCard } from './Skeleton';
 
-export function MonthViewSkeleton() {
-  return (
-    <div className="dashboard-skel" aria-busy="true" aria-label="월별 데이터 로딩 중">
-      <Skeleton
-        width="100%"
-        height="2.5rem"
-        borderRadius="0.5rem"
-        style={{ marginBottom: '1rem' }}
-      />
-
-      <SkeletonKpiCards count={4} />
-
-      <div className="card" style={{ marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <Skeleton width="6rem" height="1.25rem" />
-          <Skeleton width="10rem" height="1.75rem" borderRadius="0.5rem" />
-        </div>
-        <SkeletonKpiCards count={3} />
-        <SkeletonTableCard rowCount={4} hasHeader={false} />
-      </div>
-
-      <SkeletonChartCard title="일별 추이" barCount={30} />
-
-      <div className="skel-grid-2">
-        <SkeletonTableCard rowCount={6} />
-        <SkeletonTableCard rowCount={6} />
-      </div>
-    </div>
-  );
+interface MonthViewSkeletonProps {
+  /** 그릴 화면 — 화면마다 실제 카드 구성과 같은 모양으로 그려 로딩이 끝날 때 화면이 들썩이지 않게 한다 */
+  tab: Exclude<ViewTab, 'page'>;
+  /** 이 사이트가 견적 전환을 세는지 (아이티켓 O · 온코어 X) — KPI 카드 수가 달라진다 */
+  hasEstimate: boolean;
 }
 
-export function YearViewSkeleton() {
+/**
+ * 월 화면 로딩 모양. 화면 머리말은 App 이 항상 그리므로 여기서는 본문만.
+ * 종합 요약: KPI 6장(온코어 5) + 일별 추이 + 분석 각주 / 전환 분석: 전환 KPI 3장(온코어 2) + 전환 표 / 페이지·상품: 인기 페이지 표 + 고도몰 표
+ */
+export function MonthViewSkeleton({ tab, hasEstimate }: MonthViewSkeletonProps) {
   return (
-    <div className="dashboard-skel" aria-busy="true" aria-label="연간 데이터 로딩 중">
-      <SkeletonKpiCards count={5} />
-
-      <SkeletonChartCard title="월별 추이" barCount={12} />
-
-      <SkeletonTableCard rowCount={12} />
+    <div className="dashboard-skel" aria-busy="true" aria-label="월별 데이터 로딩 중">
+      {tab === 'overview' && (
+        <>
+          <SkeletonKpiCards count={hasEstimate ? 6 : 5} />
+          <SkeletonChartCard barCount={30} />
+          <SkeletonTableCard rowCount={4} />
+        </>
+      )}
+      {tab === 'conversion' && (
+        <>
+          <SkeletonKpiCards count={hasEstimate ? 3 : 2} />
+          <SkeletonTableCard rowCount={8} />
+        </>
+      )}
+      {tab === 'content' && (
+        <>
+          <SkeletonTableCard rowCount={10} />
+          <SkeletonTableCard rowCount={8} />
+        </>
+      )}
     </div>
   );
 }

@@ -1,3 +1,6 @@
+import { AlertTriangle } from 'lucide-react';
+import { TableWrap } from './TableWrap';
+
 export function WhyCard() {
   return (
     <details className="card why-card" id="cardWhyGodoDiff">
@@ -7,7 +10,7 @@ export function WhyCard() {
           이 화면은 <b>Google Analytics 4(GA4)</b> 기준입니다. 고도몰{' '}
           <b>통계 → 애널리틱스</b>는 NHN커머스가 따로 집계하므로 같은 사이트라도 숫자가 조금 다릅니다. 실제 운영 데이터를 직접 대조·검증한 기준입니다.
         </p>
-        <div className="tw why-tw">
+        <TableWrap className="why-tw">
           <table>
             <thead>
               <tr>
@@ -39,7 +42,7 @@ export function WhyCard() {
               </tr>
             </tbody>
           </table>
-        </div>
+        </TableWrap>
         <p className="section-gap">
           <b>오차가 생기는 이유</b>
         </p>
@@ -52,7 +55,7 @@ export function WhyCard() {
             <b>측정 도구의 차이</b> — GA4는 방문자 브라우저가 구글 측정 코드를 보내야 기록됩니다. 광고 차단·보안 프로그램·개인정보 보호 브라우저가 막으면 빠지고, 알려진 봇은 자동으로 제외됩니다. 고도몰은 자체 방식이라 접속이 적은 날 더 많이 셉니다(추정, 아직 검증하지 못했습니다). 이 부분은 보정할 수 없습니다.
           </li>
           <li>
-            <b>내부 새로고침</b> — 견적 목록·견적 상세처럼 직원이 화면을 열어 두고 새로고침하면 페이지뷰이 크게 늘어납니다. 고도몰은 이를 제외하는 것으로 보입니다. 이 화면은 해당 페이지에 ⚠를 표시하고, 페이지뷰 카드에{' '}
+            <b>내부 새로고침</b> — 견적 목록·견적 상세처럼 직원이 화면을 열어 두고 새로고침하면 페이지뷰이 크게 늘어납니다. 고도몰은 이를 제외하는 것으로 보입니다. 이 화면은 해당 페이지에 <AlertTriangle size={13} aria-label="경고" />를 표시하고, 페이지뷰 카드에{' '}
             <i>의심분을 뺀 값</i>을 함께 보여 줍니다.
           </li>
           <li>

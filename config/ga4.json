@@ -8,5 +8,14 @@
   "internalFilter": {
     "state": "active",
     "since": "2026-10-15"
+  },
+  "oncore": {
+    "title": "온코어 애널리틱스",
+    "siteUrl": "https://on-core.co.kr",
+    "startMonth": "2026-10",
+    "internalFilter": {
+      "state": "pending",
+      "since": null
+    }
   }
 }

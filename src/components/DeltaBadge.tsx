@@ -1,3 +1,5 @@
+import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+
 interface DeltaBadgeProps {
   cur: number | null | undefined;
   prev: number | null | undefined;
@@ -9,7 +11,7 @@ export function DeltaBadge({ cur, prev, label }: DeltaBadgeProps) {
   if (prev === 0) {
     if (cur === 0) return null;
     return (
-      <span className="d up">
+      <span className="delta up">
         신규 <small>{label}</small>
       </span>
     );
@@ -17,14 +19,15 @@ export function DeltaBadge({ cur, prev, label }: DeltaBadgeProps) {
   const p = ((cur - prev) / Math.abs(prev)) * 100;
   if (Math.abs(p) < 0.05) {
     return (
-      <span className="d flat">
-        ― <small>{label}</small>
+      <span className="delta flat">
+        <Minus size={12} aria-hidden="true" /> <small>{label}</small>
       </span>
     );
   }
   return (
-    <span className={`d ${p > 0 ? 'up' : 'down'}`}>
-      {p > 0 ? '▲' : '▼'} {Math.abs(p).toFixed(1)}% <small>{label}</small>
+    <span className={`delta ${p > 0 ? 'up' : 'down'}`}>
+      {p > 0 ? <ArrowUp size={12} aria-hidden="true" /> : <ArrowDown size={12} aria-hidden="true" />}{' '}
+      {Math.abs(p).toFixed(1)}% <small>{label}</small>
     </span>
   );
 }

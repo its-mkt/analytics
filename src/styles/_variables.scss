@@ -14,15 +14,16 @@ $bp-sm: 480px;
   --line: #23252a;
   --line2: #34343a;
   --acc: #5e6ad2;
+  --brand: #f59e0b; // 브랜드 아이콘·파비콘 색 — ad-insight(파랑)와 탭·사이드바에서 구분되게 주황, 두 테마 같은 값
+  --radius-btn: 999px; // 누르는 것(버튼·아이콘 버튼·세그먼트·칩·기간 줄)은 알약 — ad-insight 와 부품을 같이 쓰면 그쪽은 0
   --accbg: #1a1c33;
   --accink: #9aa3ff;
   --hi: #fbbf24;
   --hi-ink: #fbbf24;
   --ok: #3ecf5f;
-  --up: #3ecf5f;
-  --down: #ff6369;
-  --rise: #ff6369;
-  --fall: #5b9bff;
+  --up: #ff6369; // 증감: 올라감 = 빨강 (ad-insight 와 같은 뜻, 두 대시보드 공통)
+  --down: #5b9bff; // 증감: 내려감 = 파랑
+  --weekend: #ff6369; // 차트 주말 날짜 (증감과 별개)
   --warn: #f0b04a;
   --warnbg: #2b2210;
   --bar: #6c78e6;
@@ -33,6 +34,16 @@ $bp-sm: 480px;
 }
 
 :root {
+  // 높이 단계 — 버튼·뱃지·태그의 높이는 위아래 패딩이 아니라 이 값으로 정한다. 패딩은 좌우만 쓴다.
+  // 이 여덟 단계 밖의 높이는 만들지 않는다 (README '디자인 규칙')
+  --h-12: 0.75rem;
+  --h-16: 1rem; // 작은 태그 (상품 태그)
+  --h-20: 1.25rem; // 뱃지·태그·순위 (증감 뱃지, 태그, 코드 표기)
+  --h-24: 1.5rem; // 작은 버튼 — 칩·세그먼트·실시간 토글·.btn-sm·닫기
+  --h-32: 2rem; // 기본 버튼·드롭다운·테마 토글·기간 선택 줄
+  --h-40: 2.5rem; // 사이드바 메뉴·검색 줄·모달 버튼
+  --h-48: 3rem; // 휴대폰 손가락 크기 (화면 기본 글자 14px 에서 42px)
+  --h-64: 4rem;
   --bg: #f7f8f8;
   --side: #fbfbfc;
   --card: #fff;
@@ -42,15 +53,16 @@ $bp-sm: 480px;
   --line: #e6e7ea;
   --line2: #d4d6db;
   --acc: #5e6ad2;
+  --brand: #f59e0b; // 브랜드 아이콘·파비콘 색 — ad-insight(파랑)와 탭·사이드바에서 구분되게 주황, 두 테마 같은 값
+  --radius-btn: 999px; // 누르는 것(버튼·아이콘 버튼·세그먼트·칩·기간 줄)은 알약 — ad-insight 와 부품을 같이 쓰면 그쪽은 0
   --accbg: #eceefb;
   --accink: #4650b8;
   --hi: #f59e0b;
   --hi-ink: #b45309;
   --ok: #13803a;
-  --up: #1f8a3b;
-  --down: #d92d3a;
-  --rise: #d92d3a;
-  --fall: #2f6fed;
+  --up: #d92d3a; // 증감: 올라감 = 빨강 (ad-insight 와 같은 뜻, 두 대시보드 공통)
+  --down: #2f6fed; // 증감: 내려감 = 파랑
+  --weekend: #d92d3a; // 차트 주말 날짜 (증감과 별개)
   --warn: #9a5b00;
   --warnbg: #fff4e0;
   --bar: #5e6ad2;
