@@ -30,6 +30,25 @@ Google Cloud 콘솔·서비스 계정·JSON 키는 **필요 없다.** GA4 를 �
 ## 코드를 고쳤을 때 (Apps Script)
 `apps-script/Code.gs` 를 고치면 Apps Script 에디터에 붙여넣고 저장한 뒤 **배포 → 배포 관리 → 연필 → 버전: 새 버전 → 배포** 해야 웹앱에 반영된다(주소는 그대로). 수집 항목을 바꿨으면 `SCHEMA` 숫자를 올리면 과거 월도 다시 채워진다. 트리거를 다시 만들려면 `setupTrigger` 실행.
 
+## 온코어 화면 (2026-11-16 추가)
+사이드바 브랜드 아래 **아이티켓 / 온코어** 스위치로 사이트를 바꾼다. 주소는 ad-insight 와 같은 규칙이다 — **경로 = 어느 화면인지, 파라미터 = 그 화면 안의 조건**. 링크를 공유해도 같은 화면으로 열린다.
+
+| 화면 | 주소 |
+|---|---|
+| 종합 요약 (최신 달) | `its.itket.com/analytics/itket` |
+| 전환 분석 · 2026년 10월 | `its.itket.com/analytics/itket/conversion?m=2026-10` |
+| 온코어 페이지 · 상품 · 2026년 연간 | `its.itket.com/analytics/oncore/content?m=2026` |
+| URL 분석 | `its.itket.com/analytics/itket/page?q=/goods/123` |
+
+기간(`m`)이 최신 달이면 주소에서 뺀다. 예전 해시 주소(`/analytics/#conversion/2026-10`, `#page/검색어/2026-10`)로 들어와도 새 주소로 바꿔 연다. 깊은 경로에는 파일이 없으므로 빌드가 `site/404.html`(같은 앱의 복사본)을 만들어 Pages 가 그 경로로 연다. 개발 서버는 `localhost:1000/` (화면 주소 `/itket/conversion`).
+
+- **수집**: 같은 Apps Script(`apps-script/Code.gs`)의 `collectOncore` 가 온코어 GA4 속성(`ONCORE.PROPERTY_ID` 544861334)을 아이티켓과 **같은 형식**으로 3시간마다 모은다(`collectMonth_` 를 온코어 속성·전환 정의로 실행). 저장 파일·트리거가 따로라 실패해도 아이티켓 수집에 영향이 없다. 측정 전 달(세션 0)은 조회 1번으로 빈 달만 저장한다 (GA4 측정 시작 2026-10-13).
+- **웹앱**: 모든 모드에 `&site=oncore` 를 붙이면 온코어로 답한다(`?site=oncore` 전체 · `&mode=cur` · `&mode=live` · `&mode=page`). ad-insight 가 쓰는 `?mode=oncore` 는 예전과 같은 가벼운 형식(기기·주문 완료만)으로 계속 내려준다.
+- **저장소**: Actions 가 `data/oncore/ga4/YYYY-MM.json` 에 저장하고(`config/ga4.json` 의 `oncore.startMonth` 이후 세션이 있는 달만), 상품·카테고리·게시판 이름은 `SITE=oncore node scripts/resolve-names.mjs` 로 `data/oncore/names.json` 에 캐시한다.
+- **전환**: 온코어는 견적 완료 화면이 없어(제출 후 알림 → 목록으로 이동) 회원가입·주문 완료만 센다. 견적 카드·견적 열은 온코어 화면에서 숨긴다. 견적·회원가입 실데이터(시트·회원 DB)는 아이티켓만 있다.
+- **회사 IP 제외**: 온코어 GA4 에는 아직 내부 트래픽 필터가 없다(`config/ga4.json` 의 `oncore.internalFilter`). 설정하면 이 값을 바꾼다.
+- **처음 한 번 (코드 반영 후)**: Apps Script 에디터에 `Code.gs` 를 붙여넣고 저장 → `collectOncore` 실행(SCHEMA 2 로 올라가 과거 월을 새 형식으로 다시 채움, 시간 초과 시 다시 실행) → 배포 관리 → 새 버전. 트리거(`setupOncoreTrigger`)는 이미 있으면 다시 만들 필요 없다. 웹앱이 새 버전이 아니면 온코어 수집·실시간·페이지 분석은 건너뛰고 아이티켓 값을 섞지 않는다.
+
 ## 견적·회원가입 실데이터 연동 (2026-10-23 추가)
 견적 요청·회원가입 카드는 GA4 완료화면 세션이 아니라 **실제 접수·가입 건수**를 보여 준다. 웹앱(`?mode=cur`, 기본)이 함께 내려준다.
 
@@ -37,6 +56,8 @@ Google Cloud 콘솔·서비스 계정·JSON 키는 **필요 없다.** GA4 를 �
 |---|---|---|
 | 견적 요청 (`godoQuotes`) | 견적문의 구글 시트(`QUOTES_SHEET_ID`, 접수날짜 열) 월별 행 수 | `quotesData_()` (15분 캐시) |
 | 회원가입 (`godoSignups`) | 아이티켓 서버 조회 API `/dbk/dbk_member_stats.php` — 회원 DB `es_member.entryDt`(관리자 회원 리스트의 회원가입일과 같은 기준) 일별 **건수만**(개인정보 없음). 2026-10-23 관리자 화면과 22개월 전부 일치 확인 | `signupsData_()` (15분 캐시) |
+
+> **회원가입 과거 달 보정 (2026-11-16):** 회원 DB 는 1년 넘게 접속하지 않은 회원이 휴면 보관소로 옮겨지면서 오래된 달일수록 줄어든다 — 관리자 [통계 > 회원분석 > 신규 회원분석 > 월별]과 대조하니 2025-11 이전이 크게 적었다(2025-09: 관리자 19 ↔ DB 1, 2025년 합 150). 그래서 ① `data/ref/godomall-signups-admin.json` 에 관리자 통계 월별 값을 두고, ② 수집기(`scripts/collect.mjs`)가 `godomall-signups.json` 에 **달마다 지금까지 본 값 중 큰 값**을 남기며, ③ 화면은 실시간 DB 값과 이 저장본·관리자 통계 중 큰 값을 쓴다(`mergeSignups`). 최근 달은 DB 와 관리자 통계가 같으므로(±2) 정확할 때 기록돼 이후 줄어도 유지된다. 근본 해결은 가입 API 가 휴면 회원까지 세도록 서버(`DbkMemberStatsController.php`)를 고치는 것이다.
 
 - 처음 한 번: 스크립트 속성 `ITKET_SYNC_KEY` 등록(견적 동기화 Apps Script "아이티켓 견적문의(팀즈)"의 같은 이름 속성 값과 동일) → 에디터에서 **`authorizeSheets` 실행 → 시트·외부 호출 권한 허용**. 로그에 `시트 연결 확인`·`가입 API 연결 확인`이 나오면 정상.
 - 연동이 실패하면 견적은 GA4 완료화면 세션으로, 회원가입은 빌드 때 넣은 `data/ref/godomall-signups.json`(월 합계)으로 대신 표시된다. 카드 제목에 **"(실제 접수)"가 없으면 대체값**이다. 원인은 에디터에서 `authorizeSheets` 실행 로그로 확인한다(`quotesData_ 오류` / `signupsData_ 오류`).

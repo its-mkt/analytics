@@ -1,13 +1,16 @@
 import {
-  BarChart3,
+  Activity,
   FileSearch,
   LayoutDashboard,
   ShoppingBag,
   Target,
   X,
 } from 'lucide-react';
-import type { ViewTab } from '../types/analytics';
+import type { SiteId, ViewTab } from '../types/analytics';
+import { routePath } from '../utils/route';
+import { SITES } from '../utils/site';
 import { Dropdown, type DropdownOption } from './Dropdown';
+import { SegmentedControl } from './SegmentedControl';
 
 type DashboardId = 'ad-insight' | 'analytics';
 
@@ -24,6 +27,11 @@ const goDashboard = (id: DashboardId) => {
 
 interface SidebarProps {
   title: string;
+  /** 수집본 갱신 시각 (ISO) — 사이드바 아래 '… 수집' 상자 */
+  updated: string | null;
+  /** 보고 있는 사이트 (아이티켓 / 온코어) */
+  site: SiteId;
+  onSiteChange: (site: SiteId) => void;
   open: boolean;
   currentTab: ViewTab;
   onCloseDrawer: () => void;
@@ -33,6 +41,9 @@ interface SidebarProps {
 
 export function Sidebar({
   title,
+  updated,
+  site,
+  onSiteChange,
   open,
   currentTab,
   onCloseDrawer,
@@ -62,7 +73,7 @@ export function Sidebar({
         <div className="brand" id="brand">
           <a
             className="brand-home"
-            href="./"
+            href={routePath({ site, tab: 'overview', q: '', m: '' })}
             title={`${title} 처음으로`}
             aria-label="처음으로"
             onClick={(e) => {
@@ -72,11 +83,23 @@ export function Sidebar({
             }}
           >
             <i className="brand-icon">
-              <BarChart3 size={15} aria-hidden="true" />
+              <Activity size={15} aria-hidden="true" />
             </i>
           </a>
           <Dropdown<DashboardId> className="brand-dd" id="dd-dashboard" ariaLabel="대시보드 선택" options={DASHBOARD_OPTIONS} value="analytics" onChange={goDashboard} />
         </div>
+
+        {/* 사이트 선택 (아이티켓 / 온코어) — 주소 경로(/analytics/itket · /analytics/oncore)로 남아 링크를 공유해도 같은 사이트로 열린다 */}
+        <SegmentedControl<SiteId>
+          className="site-seg"
+          id="siteSeg"
+          items={SITES}
+          value={site}
+          onChange={onSiteChange}
+          fullWidth
+          size="md"
+          ariaLabel="사이트 선택"
+        />
 
         <nav className="sn" id="sideNav" aria-label="사이드바 메뉴">
           <div className="lbl">대시보드</div>
@@ -108,7 +131,6 @@ export function Sidebar({
             <span>페이지 · 상품</span>
           </button>
 
-          <div className="lbl" style={{ marginTop: '0.5rem' }}>검색 · 탐색</div>
           <button
             type="button"
             className={`m ${currentTab === 'page' ? 'on' : ''}`}
@@ -119,6 +141,9 @@ export function Sidebar({
             <span>URL 분석</span>
           </button>
         </nav>
+
+        {/* 수집 상태 — ad-insight 사이드바 아래 '… 수집' 상자와 같은 자리 */}
+        <UpdatedBox updated={updated} />
 
         {/* 마케팅팀 · 배포 날짜 기준 릴리즈 표기 */}
         <div className="side-foot" id="sideReleaseFoot">
@@ -138,5 +163,20 @@ export function Sidebar({
         </div>
       </aside>
     </>
+  );
+}
+
+/** 수집본 갱신 시각 → '2026-11-16 14:31 수집'. 6시간 넘게 갱신이 없으면 지연 표시 (자동 수집은 30분~3시간 간격) */
+function UpdatedBox({ updated }: { updated: string | null }) {
+  if (!updated) return <div className="side-upd stale">아직 수집된 데이터가 없습니다</div>;
+  const u = new Date(updated);
+  const h = (Date.now() - u.getTime()) / 36e5;
+  const at = new Date(u.getTime() + 9 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
+  const rel = h < 1 ? '방금' : h < 24 ? `${Math.round(h)}시간 전` : `${Math.round(h / 24)}일 전`;
+  const stale = h > 6;
+  return (
+    <div className={`side-upd${stale ? ' stale' : ''}`} id="upd" title={`마지막 갱신 ${at} (${rel})`}>
+      {at} 수집{stale ? ' · 갱신 지연' : ''}
+    </div>
   );
 }

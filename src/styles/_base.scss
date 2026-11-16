@@ -21,56 +21,20 @@ body {
   }
 }
 
+// 화면 머리말 — ad-insight 와 같은 구성(왼쪽 강조 막대 + 이름 + 한 줄 설명). 글자 크기·색은 analytics 규칙
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
-  padding-bottom: 1.25rem;
+  gap: 0.75rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--line);
-
-  .page-header-lead {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    min-width: 0;
-  }
-
-  .page-header-icon {
-    width: 2.875rem;
-    height: 2.875rem;
-    border-radius: 0.625rem;
-    background: var(--card);
-    border: 1px solid var(--line);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--acc);
-    flex: none;
-
-    svg {
-      width: 1.35rem;
-      height: 1.35rem;
-    }
-  }
 
   .page-header-main {
+    flex: 1;
     min-width: 0;
-  }
-
-  .page-header-eyebrow {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--acc);
-    margin-bottom: 0.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
+    border-left: 0.25rem solid var(--acc);
+    padding-left: 0.75rem;
   }
 
   .page-title {

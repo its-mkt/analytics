@@ -31,3 +31,9 @@ export const SourceNotice: FC<SourceNoticeProps> = ({ sources, className = '' })
 
 // 하위 호환 alias
 export const SecSrc = SourceNotice;
+
+/** 출처 줄의 쇼핑몰 링크 — 보고 있는 사이트(설정의 siteUrl)를 따른다 */
+export const storeSource = (siteUrl: string): SourceLinkItem => ({
+  label: /on-core/.test(siteUrl) ? '온코어 공식 스토어' : '아이티켓 공식 스토어',
+  href: siteUrl,
+});

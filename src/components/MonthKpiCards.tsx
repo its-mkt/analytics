@@ -1,6 +1,6 @@
 import type { GodomallQuotes, MetricKey, MonthData } from '../types/analytics';
 import { dur, fmt } from '../utils/format';
-import { convDaily, godoCount, metricOf, sumDays } from '../utils/metrics';
+import { convDaily, godoCount, metricOf, sumDays, tracksEstimate } from '../utils/metrics';
 import { DeltaBadge } from './DeltaBadge';
 import { KpiCardsGrid, type KpiItem } from './KpiCardsGrid';
 
@@ -11,6 +11,9 @@ interface MonthKpiCardsProps {
   suspExcess: number;
   godoQuotes?: GodomallQuotes | null;
   godoQuotesLoading?: boolean;
+  /** 견적 실건수(고도몰 DB)를 비교할 전월·전년 달 — GA4 비교가 빠진 달(수집 공백·중간 시작)이어도 실건수는 비교한다 */
+  prevKey?: string;
+  yoyKey?: string;
 }
 
 const KPI_DEFS: Array<[string, MetricKey]> = [
@@ -27,6 +30,8 @@ export function MonthKpiCards({
   suspExcess,
   godoQuotes,
   godoQuotesLoading,
+  prevKey: prevK,
+  yoyKey: yoyK,
 }: MonthKpiCardsProps) {
   const partialDays = m.partial ? m.daily.length : null;
   const prevLabel = partialDays ? '전월 동기간' : '전월';
@@ -113,7 +118,7 @@ export function MonthKpiCards({
   const estCur = godoEst != null ? godoEst : ga4Est;
   const estPrev =
     godoEst != null
-      ? godoCount(godoQuotes, prev?.month, partialDays)
+      ? godoCount(godoQuotes, prevK ?? prev?.month, partialDays)
       : prev && prev.conv
         ? partialDays
           ? convDaily(prev, 'estimate', partialDays)
@@ -121,14 +126,15 @@ export function MonthKpiCards({
         : null;
   const estYoy =
     godoEst != null
-      ? godoCount(godoQuotes, yoy?.month, null)
+      ? godoCount(godoQuotes, yoyK ?? yoy?.month, null)
       : yoy && yoy.conv
         ? (yoy.conv.total.estimate || { sessions: 0 }).sessions
         : null;
   const estCurForDelta =
     godoEst == null && partialDays ? convDaily(m, 'estimate', partialDays) : estCur;
 
-  items.unshift({
+  // 견적을 세지 않는 사이트(온코어)는 견적 카드를 두지 않는다
+  if (tracksEstimate([m])) items.unshift({
     label: !godoQuotesLoading && godoEst != null ? '견적 요청 (실제 접수)' : '견적 요청',
     value: estCur,
     loading: !!godoQuotesLoading,

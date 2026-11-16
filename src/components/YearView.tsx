@@ -5,22 +5,23 @@ import type {
   MonthData,
 } from '../types/analytics';
 import { fmt } from '../utils/format';
-import { metricOf, METRICS, okM } from '../utils/metrics';
+import { metricOf, METRICS, okM, tracksEstimate } from '../utils/metrics';
 import { MonthlyChart } from './BarChart';
 import { DeltaBadge } from './DeltaBadge';
 import { KpiCardsGrid } from './KpiCardsGrid';
-import { PageHeader } from './PageHeader';
 import { SegmentedControl } from './SegmentedControl';
 import { YearSummaryTable } from './YearSummaryTable';
-import { SourceNotice, type SourceLinkItem } from './SourceNotice';
+import { SourceNotice, storeSource, type SourceLinkItem } from './SourceNotice';
 
-const YEAR_SOURCES: SourceLinkItem[] = [
+const yearSources = (siteUrl: string, godo: boolean): SourceLinkItem[] => [
   { label: 'Google Analytics 4 API', href: 'https://analytics.google.com/' },
-  { label: '아이티켓 공식 온라인 스토어', href: 'https://itket.com' },
-  { label: '연간 월별 누적 방문자·세션·페이지뷰 + 고도몰 실회원가입 집계' },
+  storeSource(siteUrl),
+  { label: godo ? '연간 월별 누적 방문자·세션·페이지뷰 + 고도몰 실회원가입 집계' : '연간 월별 누적 방문자·세션·페이지뷰 집계' },
 ];
 
 interface YearViewProps {
+  /** 보고 있는 사이트의 쇼핑몰 주소 (출처 줄) */
+  siteUrl: string;
   year: string;
   months: Record<string, MonthData>;
   godoSignups: GodomallSignups | null;
@@ -39,6 +40,7 @@ const ANNUAL_KPI_DEFS: Array<[string, MetricKey]> = [
 ];
 
 export function YearView({
+  siteUrl,
   year,
   months,
   godoSignups,
@@ -125,7 +127,8 @@ export function YearView({
       }, 0)
     : null;
 
-  kpiItems.push({
+  // 견적을 세지 않는 사이트(온코어)는 견적 카드를 두지 않는다
+  if (tracksEstimate(ks.map((k) => months[k]))) kpiItems.push({
     label: `견적요청 (실접수) (${year}년${isFullYear ? '' : ' 누계'})`,
     value: quoteTotal,
     badge:
@@ -141,23 +144,6 @@ export function YearView({
 
   return (
     <>
-      <PageHeader
-        id="pageHeaderYear"
-        eyebrow="ANNUAL REPORT · 연간 성과 리포트"
-        title={`${year}년 연간 성과 요약`}
-        icon={
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 3v18h18" />
-            <path d="m19 9-5 5-4-4-3 3" />
-          </svg>
-        }
-        meta={
-          <span className="tag">
-            {isFullYear ? '12개월 전체 집계' : `${validMonths.length}개월 누적`}
-          </span>
-        }
-      />
-
       <KpiCardsGrid
         id="kpisAnnual"
         ariaLabel="연간 누계 핵심 성과 지표"
@@ -201,7 +187,7 @@ export function YearView({
         onSelectMonth={onSelectMonth}
       />
 
-      <SourceNotice sources={YEAR_SOURCES} />
+      <SourceNotice sources={yearSources(siteUrl, !!godoSignups)} />
     </>
   );
 }

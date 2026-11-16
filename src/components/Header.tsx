@@ -1,53 +1,22 @@
-import { FileSpreadsheet, Menu, Moon, Sun } from 'lucide-react';
+import { FileSpreadsheet, Menu, Moon, Search, Sun } from 'lucide-react';
 
 interface HeaderProps {
-  isPage: boolean;
-  sel: string;
-  updated: string | null;
+  /** 지금 화면 이름 (경로의 마지막 칸) — 화면 머리말과 같은 이름 */
+  title: string;
   drawerOpen: boolean;
   isDark: boolean;
   onOpenDrawer: () => void;
   onToggleTheme: () => void;
+  /** 헤더 검색 버튼 → URL 분석 */
+  onSearch: () => void;
   onExportExcel?: () => void;
 }
 
-export function Header({
-  isPage,
-  sel,
-  updated,
-  drawerOpen,
-  isDark,
-  onOpenDrawer,
-  onToggleTheme,
-  onExportExcel,
-}: HeaderProps) {
-  const crumb = isPage
-    ? '페이지 분석'
-    : sel
-      ? sel.length === 4
-        ? `${sel}년 연간`
-        : `${sel.slice(0, 4)}년 ${+sel.slice(5)}월`
-      : '';
-
-  let updText = '아직 수집된 데이터가 없습니다';
-  let stale = false;
-  if (updated) {
-    const u = new Date(updated);
-    const h = (Date.now() - u.getTime()) / 36e5;
-    const s = u.toLocaleString('ko-KR', {
-      timeZone: 'Asia/Seoul',
-      month: 'numeric',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-    const rel =
-      h < 1 ? '방금' : h < 24 ? `${Math.round(h)}시간 전` : `${Math.round(h / 24)}일 전`;
-    stale = h > 6;
-    updText = `마지막 갱신 ${s} (${rel})${stale ? ' · 갱신이 지연되고 있습니다' : ''}`;
-  }
-
+/**
+ * 상단 헤더 — ad-insight 와 같은 구성: 왼쪽 '대시보드 이름 / 화면 이름', 오른쪽 검색 · (엑셀) · 테마.
+ * 마지막 갱신 시각은 ad-insight 처럼 사이드바 아래에 둔다.
+ */
+export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme, onSearch, onExportExcel }: HeaderProps) {
   return (
     <header className="top">
       <button
@@ -63,17 +32,39 @@ export function Header({
       </button>
 
       <h1>
-        <span className="ttx">대시보드 </span>
+        <span className="ttx">방문 &amp; 전환 대시보드 </span>
         <span className="crumb" id="crumb">
-          {crumb}
+          {title}
         </span>
       </h1>
+
       <span className="sp" />
-      <span className={`upd ${stale ? 'stale' : ''}`} id="upd">
-        {updText}
-      </span>
 
       <div className="acts">
+        <button
+          type="button"
+          className="btn ic top-search"
+          id="btnSearch"
+          aria-label="URL 분석 검색"
+          title="URL 분석 (Ctrl+K)"
+          onClick={onSearch}
+        >
+          <Search size={18} aria-hidden="true" />
+        </button>
+
+        {onExportExcel && (
+          <button
+            type="button"
+            className="btn btn-excel"
+            id="btnExportExcel"
+            title="현재 화면의 실적 데이터를 엑셀(.xlsx)로 다운로드합니다"
+            onClick={onExportExcel}
+          >
+            <FileSpreadsheet size={15} aria-hidden="true" />
+            <span>엑셀 다운로드</span>
+          </button>
+        )}
+
         <button
           type="button"
           className="tgl"
@@ -92,18 +83,6 @@ export function Header({
           </span>
           <i className="tgl-thumb" aria-hidden="true" />
         </button>
-        {onExportExcel && (
-          <button
-            type="button"
-            className="btn btn-excel"
-            id="btnExportExcel"
-            title="현재 화면의 실적 데이터를 엑셀(.xlsx)로 다운로드합니다"
-            onClick={onExportExcel}
-          >
-            <FileSpreadsheet size={15} aria-hidden="true" />
-            <span>엑셀 다운로드</span>
-          </button>
-        )}
       </div>
     </header>
   );

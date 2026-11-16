@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LivePayload } from '../types/analytics';
+import { webappUrl, wrongSite } from '../utils/site';
 
 const IDLE_MS = 15 * 60 * 1000; // 15 minutes
 const POLL_INTERVAL_MS = 15_000; // 15 seconds
@@ -30,8 +31,9 @@ export function useLivePolling(liveUrl: string) {
     }
 
     try {
-      const res = await fetch(`${liveUrl}?mode=live`);
+      const res = await fetch(webappUrl(liveUrl, 'mode=live'));
       const payload = (await res.json()) as LivePayload;
+      if (wrongSite(liveUrl, payload)) throw new Error('collector has no oncore mode');
       if (payload.error || typeof payload.activeUsers !== 'number') {
         throw new Error(payload.error || 'bad live payload');
       }

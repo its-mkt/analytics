@@ -8,26 +8,27 @@ import type {
   NamesMap,
   ShopTabKey,
 } from '../types/analytics';
-import { k2v, METRICS, okM, prevKey, suspOf, yoyKey } from '../utils/metrics';
+import { k2v, lateStartDay, METRICS, okCmp, prevKey, suspOf, yoyKey } from '../utils/metrics';
 import { DailyChart } from './BarChart';
 import { ConversionSection } from './ConversionSection';
 import { MonthViewSkeleton } from './DashboardSkeleton';
 import { InternalFilterNote } from './InternalFilterNote';
 import { MonthKpiCards } from './MonthKpiCards';
-import { PageHeader } from './PageHeader';
 import { PopularPagesCard } from './PopularPagesCard';
 import { SegmentedControl } from './SegmentedControl';
 import { ShopCard } from './ShopCard';
 import { WhyCard } from './WhyCard';
-import { SourceNotice, type SourceLinkItem } from './SourceNotice';
+import { SourceNotice, storeSource, type SourceLinkItem } from './SourceNotice';
 
-const MONTH_SOURCES: SourceLinkItem[] = [
+const monthSources = (siteUrl: string): SourceLinkItem[] => [
   { label: 'Google Analytics 4 API', href: 'https://analytics.google.com/' },
-  { label: '아이티켓 공식 스토어', href: 'https://itket.com' },
+  storeSource(siteUrl),
   { label: '방문자·세션·PV·체류시간 및 전환(견적·가입·주문) 집계' },
 ];
 
 interface MonthViewProps {
+  /** 보고 있는 사이트의 쇼핑몰 주소 (출처 줄) */
+  siteUrl: string;
   monthKey: string;
   months: Record<string, MonthData>;
   names: NamesMap;
@@ -46,6 +47,7 @@ interface MonthViewProps {
 }
 
 export function MonthView({
+  siteUrl,
   monthKey,
   months,
   names,
@@ -67,8 +69,12 @@ export function MonthView({
     return <MonthViewSkeleton />;
   }
 
-  const prev = okM(months, prevKey(monthKey));
-  const yoy = okM(months, yoyKey(monthKey));
+  // 이 달이나 비교할 달의 GA4 수집이 중간에 시작됐으면 비교하지 않는다 (빈 날이 섞여 증감이 부풀려짐)
+  const startDay = lateStartDay(months, monthKey);
+  const prevK = prevKey(monthKey);
+  const prevStartDay = lateStartDay(months, prevK);
+  const prev = startDay ? undefined : okCmp(months, prevK);
+  const yoy = startDay ? undefined : okCmp(months, yoyKey(monthKey));
   const partialDays = m.partial ? m.daily.length : null;
 
   const series = m.daily.map((r) => k2v(r, m));
@@ -76,44 +82,22 @@ export function MonthView({
 
   return (
     <>
-      <PageHeader
-        id="pageHeaderMonth"
-        eyebrow={
-          currentTab === 'conversion'
-            ? 'CONVERSION INTELLIGENCE · 목표 달성 성과'
-            : currentTab === 'content'
-              ? 'PAGES & PRODUCTS · 트래픽 및 인기 항목'
-              : 'MONTHLY PERFORMANCE · 월간 실적 리포트'
-        }
-        title={
-          currentTab === 'conversion'
-            ? `${monthKey.slice(0, 4)}년 ${+monthKey.slice(5)}월 전환 성과 분석`
-            : currentTab === 'content'
-              ? `${monthKey.slice(0, 4)}년 ${+monthKey.slice(5)}월 페이지 · 상품 랭킹`
-              : `${monthKey.slice(0, 4)}년 ${+monthKey.slice(5)}월 실적 분석`
-        }
-        icon={
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect width="18" height="18" x="3" y="4" rx="2" />
-            <path d="M3 10h18" />
-            <path d="M8 2v4" />
-            <path d="M16 2v4" />
-          </svg>
-        }
-        meta={
-          m.partial ? (
-            <span className="tag warn">진행 중 ({m.daily.length}일차)</span>
-          ) : (
-            <span className="tag ok">마감 완료</span>
-          )
-        }
-      />
-
       <InternalFilterNote internal={internal} monthKey={monthKey} />
 
-      {m.partial && (
-        <div className="note">
-          진행 중인 달입니다 ({m.daily.length}일차까지 집계). 전월 대비는 같은 기간끼리 비교합니다.
+      {(startDay > 0 || prevStartDay > 0) && (
+        <div className="note flex-note" id="noteLateStart">
+          <span className="tag warn">수집 시작</span>
+          <span>
+            {startDay > 0 ? (
+              <>
+                이 달은 GA4 수집이 <b>{+monthKey.slice(5)}월 {startDay}일부터</b>라 1~{startDay - 1}일 방문 기록이 없습니다. 전월·전년 비교는 하지 않습니다.
+              </>
+            ) : (
+              <>
+                전월({+prevK.slice(5)}월)은 GA4 수집이 <b>{prevStartDay}일부터</b>라 전월과는 비교하지 않습니다.
+              </>
+            )}
+          </span>
         </div>
       )}
 
@@ -127,6 +111,8 @@ export function MonthView({
             suspExcess={sp.excess}
             godoQuotes={godoQuotes}
             godoQuotesLoading={godoQuotesLoading}
+            prevKey={prevK}
+            yoyKey={yoyKey(monthKey)}
           />
 
           <section
@@ -158,6 +144,7 @@ export function MonthView({
         <ConversionSection
           monthData={m}
           prevMonthData={prev}
+          prevKey={prevK}
           partialDays={partialDays}
           names={names}
           godoSignups={godoSignups}
@@ -190,7 +177,7 @@ export function MonthView({
         </>
       )}
 
-      <SourceNotice sources={MONTH_SOURCES} />
+      <SourceNotice sources={monthSources(siteUrl)} />
     </>
   );
 }

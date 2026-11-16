@@ -5,7 +5,7 @@ import type {
   MonthData,
 } from '../types/analytics';
 import { fmt } from '../utils/format';
-import { isGap, metricOf, okM } from '../utils/metrics';
+import { isGap, metricOf, okM, tracksEstimate } from '../utils/metrics';
 
 interface YearSummaryTableProps {
   year: string;
@@ -34,6 +34,11 @@ export function YearSummaryTable({
   const val = (k: string, key: MetricKey) =>
     months[k] ? metricOf(months[k], key) : 0;
   const sum = (key: MetricKey) => ks.reduce((a, k) => a + val(k, key), 0);
+  const showEst = tracksEstimate(ks.map((k) => months[k]));   // 온코어는 견적 열이 없다
+  // 회원가입: 고도몰 실건수가 있으면 그 값(KPI 누계와 같은 기준), 없으면 GA4 가입 완료 이벤트
+  const signupOf = (k: string) =>
+    godoSignups && godoSignups.monthly[k] != null ? godoSignups.monthly[k] : val(k, 'signups');
+  const signupSum = ks.reduce((a, k) => a + signupOf(k), 0);
   const quoteSum = ks.reduce((a, k) => {
     if (godoQuotes && godoQuotes.monthly[k] != null) return a + godoQuotes.monthly[k];
     const m = okM(months, k);
@@ -63,7 +68,7 @@ export function YearSummaryTable({
               <th className="n th-stat">페이지뷰</th>
               <th className="n th-stat">신규 방문자</th>
               <th className="n th-stat">회원가입</th>
-              <th className="n th-stat">견적요청</th>
+              {showEst && <th className="n th-stat">견적요청</th>}
             </tr>
           </thead>
           <tbody>
@@ -101,30 +106,40 @@ export function YearSummaryTable({
                       </td>
                       <td
                         className="n"
-                        title="고도몰 통계 → 회원가입 수에서 직접 확인한 값 (참고용)"
+                        title="고도몰 회원가입 실건수 (회원 DB · 관리자 통계 중 큰 값)"
                       >
                         {godoVal}
                       </td>
-                      <td
-                        className="n"
-                        title="고도몰 DB 견적 실접수 건수 (참고용)"
-                      >
-                        {godoEstVal}
-                      </td>
+                      {showEst && (
+                        <td
+                          className="n"
+                          title="고도몰 DB 견적 실접수 건수 (참고용)"
+                        >
+                          {godoEstVal}
+                        </td>
+                      )}
                     </>
                   ) : m ? (
                     <>
-                      {TABLE_METRICS.map((key) => (
-                        <td key={key} className="n">
-                          {fmt(metricOf(m, key))}
+                      {TABLE_METRICS.map((key) =>
+                        key === 'signups' && godoSignups && godoSignups.monthly[k] != null ? (
+                          <td key={key} className="n" title="고도몰 회원가입 실건수">
+                            {godoVal}
+                          </td>
+                        ) : (
+                          <td key={key} className="n">
+                            {fmt(metricOf(m, key))}
+                          </td>
+                        ),
+                      )}
+                      {showEst && (
+                        <td className="n" title="고도몰 DB 견적 실접수 건수">
+                          {godoEstVal}
                         </td>
-                      ))}
-                      <td className="n" title="고도몰 DB 견적 실접수 건수">
-                        {godoEstVal}
-                      </td>
+                      )}
                     </>
                   ) : (
-                    <td className="td-notice muted" colSpan={6}>
+                    <td className="td-notice muted" colSpan={showEst ? 6 : 5}>
                       ―
                     </td>
                   )}
@@ -140,7 +155,7 @@ export function YearSummaryTable({
               <td className="n td-stat td-total-val">
                 <b>{fmt(sum('activeUsers'))}</b>
               </td>
-              {(['sessions', 'screenPageViews', 'newUsers', 'signups'] as MetricKey[]).map(
+              {(['sessions', 'screenPageViews', 'newUsers'] as MetricKey[]).map(
                 (key) => (
                   <td key={key} className="n td-stat td-total-val">
                     <b>{fmt(sum(key))}</b>
@@ -148,15 +163,20 @@ export function YearSummaryTable({
                 ),
               )}
               <td className="n td-stat td-total-val">
-                <b>{fmt(quoteSum)}*</b>
+                <b>{fmt(signupSum)}{godoSignups ? '*' : ''}</b>
               </td>
+              {showEst && (
+                <td className="n td-stat td-total-val">
+                  <b>{fmt(quoteSum)}*</b>
+                </td>
+              )}
             </tr>
           </tfoot>
         </table>
       </div>
       <div className="tbl-foot">
         <div className="foot-left">
-          <b>방문자</b> 일별 합산 · <b>세션·PV·신규</b> GA4 기준 · <b>회원가입·견적요청</b> (*고도몰 DB 실접수)
+          <b>방문자</b> 일별 합산 · <b>세션·PV·신규</b> GA4 기준 · {showEst ? <><b>회원가입·견적요청</b> (*고도몰 DB 실접수)</> : <><b>회원가입</b> 가입 완료 화면 기준</>}
         </div>
         <div className="foot-right">
           단위: 명·회·건

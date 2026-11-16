@@ -41,6 +41,11 @@ jobs:
       - name: 상품·카테고리·게시판 이름 조회
         continue-on-error: true
         run: node scripts/resolve-names.mjs
+      - name: 온코어 상품·카테고리·게시판 이름 조회
+        continue-on-error: true
+        env:
+          SITE: oncore
+        run: node scripts/resolve-names.mjs
       - name: 대시보드 생성
         env:
           GA4_WEBAPP_URL: ${{ secrets.GA4_WEBAPP_URL }}

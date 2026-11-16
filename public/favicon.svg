@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- 사이드바 브랜드 아이콘과 같은 모양: analytics 주황 강조색(hi 변수, #f59e0b) 네모 + 흰 방문 흐름선(lucide activity).
+       ad-insight 는 파란(#2d5fd1) 네모 + 막대그래프라 탭에서 구분된다 -->
+  <rect width="24" height="24" rx="4" fill="#f59e0b"/>
+  <g transform="translate(4 4) scale(0.6667)" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+  </g>
+</svg>

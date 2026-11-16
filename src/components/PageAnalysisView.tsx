@@ -15,17 +15,18 @@ import { DailyChart } from './BarChart';
 import { KpiCardsGrid } from './KpiCardsGrid';
 import { PageAnalysisDetails } from './PageAnalysisDetails';
 import { PageAnalysisSkeleton } from './PageAnalysisSkeleton';
-import { PageHeader } from './PageHeader';
 import { PageSearchCard } from './PageSearchCard';
-import { SourceNotice, type SourceLinkItem } from './SourceNotice';
+import { SourceNotice, storeSource, type SourceLinkItem } from './SourceNotice';
 
-const PAGE_ANALYSIS_SOURCES: SourceLinkItem[] = [
+const pageSources = (siteUrl: string): SourceLinkItem[] => [
   { label: 'Google Analytics 4 API', href: 'https://analytics.google.com/' },
-  { label: '아이티켓 공식 스토어', href: 'https://itket.com' },
+  storeSource(siteUrl),
   { label: 'URL·상품번호 실시간 검색 및 진입 세션별 전환율 집계 (10분 캐시)' },
 ];
 
 interface PageAnalysisViewProps {
+  /** 보고 있는 사이트의 쇼핑몰 주소 (출처 줄) */
+  siteUrl: string;
   pageQ: string;
   pageM: string;
   keys: string[];
@@ -38,6 +39,7 @@ interface PageAnalysisViewProps {
 }
 
 export function PageAnalysisView({
+  siteUrl,
   pageQ,
   pageM,
   keys,
@@ -201,19 +203,6 @@ export function PageAnalysisView({
 
   return (
     <>
-      <PageHeader
-        id="pageHeaderAnalysis"
-        eyebrow="PAGE INTELLIGENCE · 페이지 분석 리포트"
-        title="상세 페이지 성과 분석"
-        icon={
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-        }
-        meta={<span className="tag">실시간 API 연동</span>}
-      />
-
       <PageSearchCard
         inputQ={inputQ}
         pageM={pageM}
@@ -235,7 +224,7 @@ export function PageAnalysisView({
 
       {bodyContent}
 
-      <SourceNotice sources={PAGE_ANALYSIS_SOURCES} />
+      <SourceNotice sources={pageSources(siteUrl)} />
     </>
   );
 }

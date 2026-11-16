@@ -17,6 +17,8 @@ import { SegmentedControl } from './SegmentedControl';
 interface ConversionSectionProps {
   monthData: MonthData;
   prevMonthData?: MonthData;
+  /** 실건수(고도몰 DB)를 비교할 전월 — GA4 비교가 빠진 달이어도 실건수는 비교한다 */
+  prevKey?: string;
   partialDays: number | null;
   names: NamesMap;
   godoSignups?: GodomallSignups | null;
@@ -138,6 +140,7 @@ const FALLBACK_DEFS: ConversionDef[] = [
 export function ConversionSection({
   monthData,
   prevMonthData,
+  prevKey: prevK,
   partialDays,
   names,
   godoSignups,
@@ -203,17 +206,17 @@ export function ConversionSection({
           const godoEst = isEstimate ? godoCount(godoQuotes, monthData.month, null) : null;
           // 진행 중인 달은 전월도 같은 1~n일만 (월 전체와 비교하면 감소로 보임)
           const prevGodoEst = isEstimate
-            ? godoCount(godoQuotes, prevMonthData?.month, partialDays)
+            ? godoCount(godoQuotes, prevK ?? prevMonthData?.month, partialDays)
             : null;
 
           const godoSign = isSignup ? godoCount(godoSignups, monthData.month, null) : null;
           // 가입 실데이터는 일별 값이 없으면 동기간 합산이 불가 → null(비교 생략)
           const prevGodoSign = isSignup
-            ? godoCount(godoSignups, prevMonthData?.month, partialDays)
+            ? godoCount(godoSignups, prevK ?? prevMonthData?.month, partialDays)
             : null;
           const prevSignFull =
             isSignup && partialDays && prevGodoSign == null
-              ? godoCount(godoSignups, prevMonthData?.month, null)
+              ? godoCount(godoSignups, prevK ?? prevMonthData?.month, null)
               : null;
 
           const isLoading = !!godoQuotesLoading;
