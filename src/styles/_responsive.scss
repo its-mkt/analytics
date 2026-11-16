@@ -114,8 +114,8 @@
 
     // 휴대폰 헤더는 ad-insight 처럼 아이콘만 (화면 이름 자리를 남긴다)
     .btn-excel {
-      width: 2.75rem;
-      height: 2.75rem;
+      width: var(--btn-h-xl);
+      height: var(--btn-h-xl);
       padding: 0;
       justify-content: center;
       border-radius: var(--radius-btn);
@@ -132,8 +132,8 @@
   }
 
   .btn.ic {
-    width: 2.75rem;
-    height: 2.75rem;
+    width: var(--btn-h-xl);
+    height: var(--btn-h-xl);
     padding: 0;
     justify-content: center;
     border-radius: var(--radius-btn);
@@ -159,7 +159,7 @@
 
   .tgl {
     width: 3.5rem;
-    height: 2rem;
+    height: var(--btn-h);
 
     .tgl-icon {
       width: 1.375rem;
@@ -168,8 +168,8 @@
 
     i,
     .tgl-thumb {
-      width: calc(2rem - 6px);
-      height: calc(2rem - 6px);
+      width: calc(var(--btn-h) - 6px);
+      height: calc(var(--btn-h) - 6px);
       top: 2px;
       left: 2px;
     }
@@ -238,8 +238,8 @@
   }
 
   .m {
-    min-height: 2.75rem;
-    padding: 0.625rem 0.875rem;
+    height: var(--btn-h-xl);
+    padding: 0 0.875rem;
     font-size: 0.9375rem;
 
     &.on {
@@ -329,8 +329,8 @@
 
     button {
       flex: none;
-      min-height: 2.5rem;
-      padding: 0.5rem 0.75rem;
+      height: var(--btn-h-xl);
+      padding: 0 0.75rem;
       font-size: 1rem;
     }
   }
