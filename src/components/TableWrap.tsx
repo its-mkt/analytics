@@ -19,7 +19,7 @@ export function TableWrap({
   children,
 }: TableWrapProps) {
   return (
-    <div className={className ? `tw ${className}` : 'tw'}>
+    <div className={className ? `table-wrap ${className}` : 'table-wrap'}>
       {isEmpty ? <EmptyState style={emptyStyle}>{empty}</EmptyState> : children}
     </div>
   );

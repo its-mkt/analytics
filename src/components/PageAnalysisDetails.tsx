@@ -64,8 +64,8 @@ export function PageAnalysisDetails({
             <thead>
               <tr>
                 <th>월 (누르면 이동)</th>
-                <th className="n">조회수</th>
-                <th className="n">방문자</th>
+                <th className="num">조회수</th>
+                <th className="num">방문자</th>
               </tr>
             </thead>
             <tbody>
@@ -74,7 +74,7 @@ export function PageAnalysisDetails({
                 return (
                   <tr
                     key={x.month}
-                    className={isCur ? '' : 'go'}
+                    className={isCur ? '' : 'link'}
                     onClick={
                       isCur ? undefined : () => onOpenPage(query, x.month)
                     }
@@ -89,8 +89,8 @@ export function PageAnalysisDetails({
                       )}
                       <ProgressBar value={x.screenPageViews} max={mmx} />
                     </td>
-                    <td className="n">{fmt(x.screenPageViews)}</td>
-                    <td className="n">{fmt(x.activeUsers)}</td>
+                    <td className="num">{fmt(x.screenPageViews)}</td>
+                    <td className="num">{fmt(x.activeUsers)}</td>
                   </tr>
                 );
               })}
@@ -103,21 +103,21 @@ export function PageAnalysisDetails({
             <thead>
               <tr>
                 <th>유입 매체</th>
-                <th className="n">세션</th>
-                <th className="n">조회수</th>
+                <th className="num">세션</th>
+                <th className="num">조회수</th>
               </tr>
             </thead>
             <tbody>
               {sources.map((x) => (
                 <tr key={x.sessionSourceMedium}>
                   <td>
-                    <span className="tx" title={x.sessionSourceMedium}>
+                    <span className="cell-text" title={x.sessionSourceMedium}>
                       {x.sessionSourceMedium}
                     </span>
                     <ProgressBar value={x.sessions} max={smax} />
                   </td>
-                  <td className="n">{fmt(x.sessions)}</td>
-                  <td className="n">{fmt(x.screenPageViews)}</td>
+                  <td className="num">{fmt(x.sessions)}</td>
+                  <td className="num">{fmt(x.screenPageViews)}</td>
                 </tr>
               ))}
             </tbody>
@@ -137,9 +137,9 @@ export function PageAnalysisDetails({
             <thead>
               <tr>
                 <th>전환</th>
-                <th className="n">전환 세션</th>
-                <th className="n">전환율</th>
-                <th className="hm">많이 전환한 유입</th>
+                <th className="num">전환 세션</th>
+                <th className="num">전환율</th>
+                <th className="hide-mobile">많이 전환한 유입</th>
               </tr>
             </thead>
             <tbody>
@@ -152,9 +152,9 @@ export function PageAnalysisDetails({
                 return (
                   <tr key={d.id}>
                     <td>{d.name}</td>
-                    <td className="n">{fmt(s)}</td>
-                    <td className="n rate">{pct(s, en.sessions)}</td>
-                    <td className="hm muted">{meds || '―'}</td>
+                    <td className="num">{fmt(s)}</td>
+                    <td className="num rate">{pct(s, en.sessions)}</td>
+                    <td className="hide-mobile muted">{meds || '―'}</td>
                   </tr>
                 );
               })}
@@ -170,16 +170,16 @@ export function PageAnalysisDetails({
             <thead>
               <tr>
                 <th>기기</th>
-                <th className="n">방문자</th>
-                <th className="n">조회수</th>
+                <th className="num">방문자</th>
+                <th className="num">조회수</th>
               </tr>
             </thead>
             <tbody>
               {devices.map((x) => (
                 <tr key={x.deviceCategory}>
                   <td>{x.deviceCategory}</td>
-                  <td className="n">{fmt(x.activeUsers)}</td>
-                  <td className="n">{fmt(x.screenPageViews)}</td>
+                  <td className="num">{fmt(x.activeUsers)}</td>
+                  <td className="num">{fmt(x.screenPageViews)}</td>
                 </tr>
               ))}
             </tbody>
@@ -193,20 +193,20 @@ export function PageAnalysisDetails({
             <thead>
               <tr>
                 <th>주소(쿼리 포함)</th>
-                <th className="n">조회수</th>
-                <th className="n">방문자</th>
+                <th className="num">조회수</th>
+                <th className="num">방문자</th>
               </tr>
             </thead>
             <tbody>
               {urls.map((x) => (
                 <tr key={x.pagePathPlusQueryString}>
                   <td>
-                    <span className="tx" title={x.pagePathPlusQueryString}>
+                    <span className="cell-text" title={x.pagePathPlusQueryString}>
                       {x.pagePathPlusQueryString}
                     </span>
                   </td>
-                  <td className="n">{fmt(x.screenPageViews)}</td>
-                  <td className="n">{fmt(x.activeUsers)}</td>
+                  <td className="num">{fmt(x.screenPageViews)}</td>
+                  <td className="num">{fmt(x.activeUsers)}</td>
                 </tr>
               ))}
             </tbody>
@@ -223,14 +223,14 @@ export function PageAnalysisDetails({
             <thead>
               <tr>
                 <th>이벤트</th>
-                <th className="n">횟수</th>
+                <th className="num">횟수</th>
               </tr>
             </thead>
             <tbody>
               {events.map((x) => (
                 <tr key={x.eventName}>
                   <td>{x.eventName}</td>
-                  <td className="n">{fmt(x.eventCount)}</td>
+                  <td className="num">{fmt(x.eventCount)}</td>
                 </tr>
               ))}
             </tbody>

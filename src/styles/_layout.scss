@@ -20,7 +20,7 @@
   flex-direction: column;
   gap: 1rem;
 
-  .lbl {
+  .nav-label {
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--sub);
@@ -44,7 +44,7 @@
       font-weight: 500;
     }
 
-    .rel {
+    .release {
       font-variant-numeric: tabular-nums;
       font-weight: 600;
       color: var(--ink2);
@@ -104,7 +104,7 @@
     flex: 1;
     min-width: 0;
 
-    .dd-trigger {
+    .dropdown-trigger {
       width: 100%;
       height: var(--h-40);
       padding: 0 0.5rem;
@@ -121,7 +121,7 @@
       }
     }
 
-    &.open .dd-trigger {
+    &.open .dropdown-trigger {
       border-color: transparent;
       background: var(--accbg);
     }
@@ -181,7 +181,7 @@
   }
 }
 
-.m {
+.nav-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -227,12 +227,12 @@
   }
 }
 
-.sn {
+.side-nav {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 
-  .m {
+  .nav-item {
     font-weight: 600;
   }
 }
@@ -265,7 +265,7 @@
   }
 
   // 경로: 대시보드 이름(흐리게) / 화면 이름(진하게) — ad-insight 와 같은 강조 순서, 크기는 analytics 규칙
-  .ttx {
+  .crumb-root {
     color: var(--sub);
     font-size: 0.9375rem;
     font-weight: 500;
@@ -287,7 +287,7 @@
     }
   }
 
-  .sp {
+  .spacer {
     flex: 1;
   }
 }

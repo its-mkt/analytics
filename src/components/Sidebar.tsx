@@ -76,7 +76,7 @@ export function Sidebar({
       />
       <aside className={`side ${open ? 'open' : ''}`} id="side">
         <CloseButton
-          className="btn ic sclose"
+          className="btn icon sclose"
           id="sclose"
           label="메뉴 닫기"
           onClick={onCloseDrawer}
@@ -114,13 +114,13 @@ export function Sidebar({
           ariaLabel="사이트 선택"
         />
 
-        <nav className="sn" id="sideNav" aria-label="사이드바 메뉴">
-          <div className="lbl">대시보드</div>
+        <nav className="side-nav" id="sideNav" aria-label="사이드바 메뉴">
+          <div className="nav-label">대시보드</div>
           {NAV_ITEMS.map(({ tab, id, Icon }) => (
             <button
               key={tab}
               type="button"
-              className={`m ${currentTab === tab ? 'on' : ''}`}
+              className={`nav-item ${currentTab === tab ? 'on' : ''}`}
               id={id}
               aria-current={currentTab === tab ? 'page' : undefined}
               onClick={() => onSelectTab(tab)}
@@ -138,7 +138,7 @@ export function Sidebar({
         <div className="side-foot" id="sideReleaseFoot">
           <span className="team">마케팅팀</span> ·{' '}
           <span
-            className="rel"
+            className="release"
             title={
               typeof __APP_COMMIT__ !== 'undefined' && __APP_COMMIT__
                 ? `커밋 ${__APP_COMMIT__}`

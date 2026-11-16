@@ -62,16 +62,16 @@ export function YearSummaryTable({
       />
 
       <TableWrap>
-        <table className="stk">
+        <table className="sticky-col">
           <thead>
             <tr>
               <th className="th-month">월</th>
-              <th className="n th-stat">방문자(일 합)</th>
-              <th className="n th-stat">세션</th>
-              <th className="n th-stat">페이지뷰</th>
-              <th className="n th-stat">신규 방문자</th>
-              <th className="n th-stat">회원가입</th>
-              {showEst && <th className="n th-stat">견적요청</th>}
+              <th className="num th-stat">방문자(일 합)</th>
+              <th className="num th-stat">세션</th>
+              <th className="num th-stat">페이지뷰</th>
+              <th className="num th-stat">신규 방문자</th>
+              <th className="num th-stat">회원가입</th>
+              {showEst && <th className="num th-stat">견적요청</th>}
             </tr>
           </thead>
           <tbody>
@@ -91,7 +91,7 @@ export function YearSummaryTable({
               return (
                 <tr
                   key={k}
-                  className={m ? 'link' : 'na'}
+                  className={m ? 'link' : 'no-data'}
                   onClick={m ? () => onSelectMonth(k) : undefined}
                 >
                   <td>
@@ -108,14 +108,14 @@ export function YearSummaryTable({
                         방문 데이터 미집계 기간
                       </td>
                       <td
-                        className="n"
+                        className="num"
                         title="고도몰 회원가입 실건수 (회원 DB · 관리자 통계 중 큰 값)"
                       >
                         {godoVal}
                       </td>
                       {showEst && (
                         <td
-                          className="n"
+                          className="num"
                           title="고도몰 DB 견적 실접수 건수 (참고용)"
                         >
                           {godoEstVal}
@@ -126,17 +126,17 @@ export function YearSummaryTable({
                     <>
                       {TABLE_METRICS.map((key) =>
                         key === 'signups' && godoSignups && godoSignups.monthly[k] != null ? (
-                          <td key={key} className="n" title="고도몰 회원가입 실건수">
+                          <td key={key} className="num" title="고도몰 회원가입 실건수">
                             {godoVal}
                           </td>
                         ) : (
-                          <td key={key} className="n">
+                          <td key={key} className="num">
                             {fmt(metricOf(m, key))}
                           </td>
                         ),
                       )}
                       {showEst && (
-                        <td className="n" title="고도몰 DB 견적 실접수 건수">
+                        <td className="num" title="고도몰 DB 견적 실접수 건수">
                           {godoEstVal}
                         </td>
                       )}
@@ -155,21 +155,21 @@ export function YearSummaryTable({
               <td className="td-month td-total-label">
                 <span className="total-label">합계</span>
               </td>
-              <td className="n td-stat td-total-val">
+              <td className="num td-stat td-total-val">
                 <b>{fmt(sum('activeUsers'))}</b>
               </td>
               {(['sessions', 'screenPageViews', 'newUsers'] as MetricKey[]).map(
                 (key) => (
-                  <td key={key} className="n td-stat td-total-val">
+                  <td key={key} className="num td-stat td-total-val">
                     <b>{fmt(sum(key))}</b>
                   </td>
                 ),
               )}
-              <td className="n td-stat td-total-val">
+              <td className="num td-stat td-total-val">
                 <b>{fmt(signupSum)}{godoSignups ? '*' : ''}</b>
               </td>
               {showEst && (
-                <td className="n td-stat td-total-val">
+                <td className="num td-stat td-total-val">
                   <b>{fmt(quoteSum)}*</b>
                 </td>
               )}

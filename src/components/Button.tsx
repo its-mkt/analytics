@@ -19,7 +19,7 @@ export function Button({
 }: ButtonProps) {
   const cls = [
     'btn',
-    variant === 'primary' && 'pri',
+    variant === 'primary' && 'primary',
     variant === 'ghost' && 'btn-ghost',
     size === 'sm' && 'btn-sm',
     className,

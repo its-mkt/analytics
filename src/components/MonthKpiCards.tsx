@@ -99,7 +99,7 @@ export function MonthKpiCards({
     }
 
     const sub = (
-      <div className="l sub1 sub-top" title={tooltip}>
+      <div className="label sub1 sub-top" title={tooltip}>
         {prevVal != null ? `${prevLabel} ${fmt(prevVal)}` : `${prevLabel} ―`}
       </div>
     );
@@ -146,7 +146,7 @@ export function MonthKpiCards({
     ),
     sub: (
       <div
-        className="l sub1 sub-top"
+        className="label sub1 sub-top"
         title={
           godoEst != null
             ? `견적문의 시트 실접수: ${fmt(godoEst)}건 (GA4 완료화면 세션: ${fmt(ga4Est)}건)`
@@ -169,7 +169,7 @@ export function MonthKpiCards({
       />
     ) : null,
     sub: (
-      <div className="l sub1 sub-top">
+      <div className="label sub1 sub-top">
         {prevAvgDur != null ? `${prevLabel} ${dur(prevAvgDur)}` : `${prevLabel} ―`}
       </div>
     ),

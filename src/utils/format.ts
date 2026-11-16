@@ -33,14 +33,14 @@ export interface OdometerDigit {
   same: boolean;
   oldChar: string;
   newChar: string;
-  dir: 'ru' | 'rd';
+  dir: 'roll-up' | 'roll-down';
   gone: boolean;
 }
 
 export function computeOdometer(fromVal: number, toVal: number): OdometerDigit[] {
   const x = [...fmt(fromVal)].reverse();
   const y = [...fmt(toVal)].reverse();
-  const dir: 'ru' | 'rd' = toVal > fromVal ? 'ru' : 'rd';
+  const dir: 'roll-up' | 'roll-down' = toVal > fromVal ? 'roll-up' : 'roll-down';
   const out: OdometerDigit[] = [];
   const maxLen = Math.max(x.length, y.length);
   for (let i = 0; i < maxLen; i++) {

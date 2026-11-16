@@ -246,7 +246,7 @@ export function ConversionSection({
             sub:
               actualCount != null ? (
                 cats ? (
-                  <div className="l sub1 sub-top sub-cats">
+                  <div className="label sub1 sub-top sub-cats">
                     {Object.entries(cats)
                       .map(([k, v]) => `${k} ${v}`)
                       .join(' · ')}
@@ -296,19 +296,19 @@ export function ConversionSection({
             <thead>
               <tr>
                 <th className="th-entity">{colHeader}</th>
-                <th className="n th-stat th-traffic">세션</th>
-                {isSourceBased && <th className="n hm th-stat th-traffic">방문자</th>}
+                <th className="num th-stat th-traffic">세션</th>
+                {isSourceBased && <th className="num hide-mobile th-stat th-traffic">방문자</th>}
                 {defs.map((d) => (
                   <th
                     key={d.id}
-                    className="n th-stat th-conv"
+                    className="num th-stat th-conv"
                     title={`${d.name} (${d.path})`}
                   >
                     {getDefShortName(d)}
                   </th>
                 ))}
-                <th className="n th-stat th-conv-total">전체 전환</th>
-                <th className="n th-stat th-rate">전환율</th>
+                <th className="num th-stat th-conv-total">전체 전환</th>
+                <th className="num th-stat th-rate">전환율</th>
               </tr>
             </thead>
             <tbody>
@@ -318,25 +318,25 @@ export function ConversionSection({
                 return (
                   <tr
                     key={r.k}
-                    className={clickable ? 'go' : ''}
+                    className={clickable ? 'link' : ''}
                     onClick={clickable && q ? () => onOpenPage(q) : undefined}
                   >
                     <td className="td-entity">
-                      <span className="tx" title={r.k}>
+                      <span className="cell-text" title={r.k}>
                         {renderRowName(r)}
                       </span>
                       <ProgressBar value={barVal} max={mx} />
                     </td>
-                    <td className="n td-stat th-traffic">{fmt(r.n)}</td>
+                    <td className="num td-stat th-traffic">{fmt(r.n)}</td>
                     {isSourceBased && (
-                      <td className="n hm td-stat th-traffic">
+                      <td className="num hide-mobile td-stat th-traffic">
                         {r.u != null ? fmt(r.u) : '-'}
                       </td>
                     )}
                     {defs.map((d) => {
                       const val = r.convs[d.id] || 0;
                       return (
-                        <td key={d.id} className="n td-stat th-conv">
+                        <td key={d.id} className="num td-stat th-conv">
                           {val > 0 ? (
                             <span className="conv-num active">{fmt(val)}</span>
                           ) : (
@@ -345,14 +345,14 @@ export function ConversionSection({
                         </td>
                       );
                     })}
-                    <td className="n td-stat th-conv-total">
+                    <td className="num td-stat th-conv-total">
                       {r.totalConv > 0 ? (
                         <span className="conv-total-pill">{fmt(r.totalConv)}</span>
                       ) : (
                         <span className="conv-num zero">0</span>
                       )}
                     </td>
-                    <td className="n td-stat th-rate rate">
+                    <td className="num td-stat th-rate rate">
                       {r.totalConv > 0 ? (
                         <span className="rate-badge">{pct(r.totalConv, r.n)}</span>
                       ) : (

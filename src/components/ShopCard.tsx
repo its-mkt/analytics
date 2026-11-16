@@ -41,7 +41,7 @@ export function ShopCard({
   const list = monthData[shopTab];
   if (!list) {
     return (
-      <Card className="card-shop-empty mt" id="sectionShopEmpty">
+      <Card className="card-shop-empty spaced" id="sectionShopEmpty">
         <h2>고도몰 인기 항목</h2>
         <EmptyState>
           이 달은 아직 집계 전입니다. 수집기가 과거 월을 순서대로 채우는 중이면 잠시 후 나타납니다.
@@ -83,9 +83,9 @@ export function ShopCard({
             <tr>
               <th className="th-rank">#</th>
               <th className="th-name">이름(페이지 제목)</th>
-              <th className="hm th-code">{label}</th>
-              <th className="n th-stat th-views">조회수</th>
-              <th className="n th-stat th-rate">비율</th>
+              <th className="hide-mobile th-code">{label}</th>
+              <th className="num th-stat th-views">조회수</th>
+              <th className="num th-stat th-rate">비율</th>
             </tr>
           </thead>
           <tbody>
@@ -95,7 +95,7 @@ export function ShopCard({
               return (
                 <tr
                   key={r.id}
-                  className={isGoods ? 'go' : ''}
+                  className={isGoods ? 'link' : ''}
                   onClick={
                     isGoods ? () => onOpenPage(`goodsNo=${r.id}`) : undefined
                   }
@@ -104,16 +104,16 @@ export function ShopCard({
                     <RankBadge rank={i + 1} />
                   </td>
                   <td className="td-name">
-                    <span className="tx" title={displayName}>
+                    <span className="cell-text" title={displayName}>
                       {displayName}
                     </span>
                     <ProgressBar value={r.views} max={mx} />
                   </td>
-                  <td className="hm td-code">
+                  <td className="hide-mobile td-code">
                     <code className="code-pill">{r.id}</code>
                   </td>
-                  <td className="n td-stat th-views">{fmt(r.views)}</td>
-                  <td className="n td-stat th-rate rate">
+                  <td className="num td-stat th-views">{fmt(r.views)}</td>
+                  <td className="num td-stat th-rate rate">
                     {((r.views / tot) * 100).toFixed(1)}%
                   </td>
                 </tr>

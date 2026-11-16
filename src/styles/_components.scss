@@ -50,7 +50,7 @@
     min-width: 9.5rem;
     height: var(--h-40);
 
-    .dd-trigger {
+    .dropdown-trigger {
       width: 100%;
       height: var(--h-40);
     }
@@ -188,13 +188,13 @@
     margin-top: 2px;
   }
 
-  .l {
+  .label {
     color: var(--sub);
     font-size: 0.75rem;
     font-weight: 500;
   }
 
-  .v {
+  .value {
     font-size: 1.875rem;
     font-weight: 700;
     letter-spacing: -0.03em;
@@ -208,7 +208,7 @@
   }
 }
 
-.d {
+.delta {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -255,7 +255,7 @@
     margin-bottom: 0;
   }
 
-  &.mt {
+  &.spaced {
     margin-top: 1.25rem;
   }
 
@@ -461,7 +461,7 @@
     }
   }
 
-  .n {
+  .num {
     font-size: 2.25rem;
     font-weight: 700;
     letter-spacing: -0.035em;
@@ -474,13 +474,13 @@
       line-height: 1.5;
       margin: 0;
 
-      + .l {
+      + .label {
         margin-top: 0.25rem;
       }
     }
   }
 
-  .lh {
+  .live-head {
     margin-bottom: 0.5rem;
     white-space: nowrap;
     font-size: 0.875rem;
@@ -488,7 +488,7 @@
     color: var(--ink);
   }
 
-  .l {
+  .label {
     color: var(--sub);
     font-size: 0.8125rem;
   }
@@ -590,7 +590,7 @@
     animation: rollIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
 
-  &.rd {
+  &.roll-down {
     > i {
       animation-name: rollOutDown;
     }
@@ -651,7 +651,7 @@
   }
 }
 
-.kst {
+.chart-stats {
   display: flex;
   gap: 1.75rem;
   flex-wrap: wrap;
@@ -661,12 +661,12 @@
     min-width: 5.75rem;
   }
 
-  .l {
+  .label {
     font-size: 0.75rem;
     color: var(--sub);
   }
 
-  .v {
+  .value {
     font-size: 1.125rem;
     font-weight: 600;
     letter-spacing: -0.02em;
@@ -681,30 +681,30 @@
   }
 }
 
-.dc {
+.chart {
   position: relative;
 
   svg {
     touch-action: pan-y;
 
-    rect.hit,
-    rect.hit:hover {
+    rect.hit-area,
+    rect.hit-area:hover {
       fill: transparent;
       cursor: pointer;
     }
 
-    text.vl {
+    text.bar-value {
       fill: var(--ink2);
       font-size: 0.75rem;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
 
-      &.mx {
+      &.max {
         fill: var(--hi-ink);
       }
     }
 
-    text.wk {
+    text.weekend {
       fill: var(--weekend);
     }
 
@@ -712,34 +712,31 @@
       font-size: 0.625rem;
     }
 
-    rect.d1 {
+    rect.day-bar {
       fill: var(--bar);
 
-      &.we {
+      &.weekend {
         fill: var(--bar);
         opacity: 0.42;
       }
 
-      &.mx {
+      &.max {
         fill: var(--hi);
       }
 
-      &.pt {
+      &.partial {
         fill: url(#ph);
         stroke: var(--bar);
         stroke-width: 1;
       }
 
-      &.nw {
-        fill: var(--bar2);
-      }
     }
 
-    .phb {
+    .partial-fill {
       fill: var(--bar);
     }
 
-    rect.hov {
+    rect.hover-band {
       fill: var(--accbg);
       opacity: 0;
 
@@ -754,7 +751,7 @@
       stroke-width: 1.2;
     }
 
-    text.avt {
+    text.avg-label {
       font-size: 0.75rem;
       paint-order: stroke;
       stroke: var(--card);
@@ -805,7 +802,7 @@
   }
 }
 
-.leg {
+.legend {
   display: flex;
   gap: 1rem;
   font-size: 0.75rem;
@@ -1217,7 +1214,7 @@
       font-size: 0.8125rem;
       box-sizing: border-box;
 
-      .dd-trigger {
+      .dropdown-trigger {
         width: 100%;
       }
     }
@@ -1555,7 +1552,7 @@ td.td-stat {
     gap: 0.5rem;
   }
 
-  .tw {
+  .table-wrap {
     border: 0;
     border-radius: 0;
     background: transparent;
@@ -1697,7 +1694,7 @@ td.td-page {
   white-space: nowrap;
   word-break: keep-all;
 
-  .tx {
+  .cell-text {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -1889,7 +1886,7 @@ tfoot {
 
   // 5대 핵심 월간 지표 (방문자(일 합), 세션, PV, 신규 방문자, 가입) 8rem(128px) 이상 단일행 수용
   .th-stat,
-  td.n {
+  td.num {
     width: 18%;
     min-width: 8rem;
     white-space: nowrap;
@@ -2093,11 +2090,11 @@ body.drawer-open-lock {
    Custom Dropdown & MonthPicker System
    - analytics 모던 SaaS 디자인 시스템 (부드러운 곡률, 은은한 서피스, 플로팅 섀도우)
    -------------------------------------------------------------------------- */
-.dd {
+.dropdown {
   position: relative;
   display: inline-flex;
 
-  .dd-trigger {
+  .dropdown-trigger {
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
@@ -2130,7 +2127,7 @@ body.drawer-open-lock {
     }
   }
 
-  .dd-chev {
+  .dropdown-chev {
     width: 0.875rem;
     height: 0.875rem;
     flex-shrink: 0;
@@ -2144,19 +2141,19 @@ body.drawer-open-lock {
   }
 
   &.open {
-    .dd-trigger {
+    .dropdown-trigger {
       border-color: var(--acc);
       background: var(--accbg);
       color: var(--acc);
     }
 
-    .dd-chev {
+    .dropdown-chev {
       transform: rotate(180deg);
       color: var(--acc);
     }
   }
 
-  .dd-menu {
+  .dropdown-menu {
     position: absolute;
     top: calc(100% + 0.375rem);
     left: 0;
@@ -2176,7 +2173,7 @@ body.drawer-open-lock {
     outline: none;
   }
 
-  .dd-opt {
+  .dropdown-opt {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2213,7 +2210,7 @@ body.drawer-open-lock {
     }
   }
 
-  .dd-check {
+  .dropdown-check {
     width: 0.875rem;
     height: 0.875rem;
     flex-shrink: 0;
@@ -2221,12 +2218,12 @@ body.drawer-open-lock {
   }
 }
 
-:root[data-theme='dark'] .dd {
-  .dd-trigger {
+:root[data-theme='dark'] .dropdown {
+  .dropdown-trigger {
     background: var(--card);
     border-color: var(--line);
   }
-  .dd-menu {
+  .dropdown-menu {
     background: var(--card);
     border-color: var(--line);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
@@ -2309,22 +2306,22 @@ body.drawer-open-lock {
       box-shadow: 0 0 0 3px rgba(94, 106, 210, 0.15);
     }
 
-    > .dd:first-child .dd-trigger {
+    > .dropdown:first-child .dropdown-trigger {
       border-top-left-radius: var(--radius-btn);
       border-bottom-left-radius: var(--radius-btn);
     }
 
-    > .dd:last-child .dd-trigger {
+    > .dropdown:last-child .dropdown-trigger {
       border-top-right-radius: var(--radius-btn);
       border-bottom-right-radius: var(--radius-btn);
     }
 
-    > .dd + .dd {
+    > .dropdown + .dropdown {
       border-left: 1px solid var(--line);
     }
   }
 
-  .dd .dd-trigger {
+  .dropdown .dropdown-trigger {
     min-height: 0;
     height: 100%;
     padding: 0 0.625rem 0 0.875rem;
@@ -2340,7 +2337,7 @@ body.drawer-open-lock {
     }
   }
 
-  .dd.open .dd-trigger {
+  .dropdown.open .dropdown-trigger {
     background: var(--accbg);
     color: var(--acc);
   }
@@ -2348,7 +2345,7 @@ body.drawer-open-lock {
   .mp-year {
     width: 5.75rem;
 
-    .dd-trigger {
+    .dropdown-trigger {
       width: 100%;
       min-width: 0;
     }
@@ -2357,19 +2354,19 @@ body.drawer-open-lock {
   .mp-month {
     width: 4.75rem;
 
-    .dd-trigger {
+    .dropdown-trigger {
       width: 100%;
       min-width: 0;
       padding: 0 0.5rem 0 0.625rem;
     }
   }
 
-  .dd-opt {
+  .dropdown-opt {
     font-size: 0.8125rem;
   }
 
-  .mp-year .dd-menu,
-  .mp-month .dd-menu {
+  .mp-year .dropdown-menu,
+  .mp-month .dropdown-menu {
     max-height: none;
     overflow-y: visible;
   }

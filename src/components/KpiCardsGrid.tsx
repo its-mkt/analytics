@@ -30,8 +30,8 @@ export function KpiCardsGrid({
     >
       {items.map((item, idx) => (
         <article key={item.label || idx} className="kpi">
-          <div className="l kpi-label">{item.label}</div>
-          <div className="v kpi-value">
+          <div className="label kpi-label">{item.label}</div>
+          <div className="value kpi-value">
             {item.loading
               ? <Skeleton className="kpi-skel-val" />
               : typeof item.value === 'number' ? fmt(item.value) : item.value}

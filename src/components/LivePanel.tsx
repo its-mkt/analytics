@@ -44,12 +44,12 @@ function LiveNotice({ title, msg, hint }: LiveNoticeProps) {
     <div id="liveBox">
       <div className="live">
         <div>
-          <div className="l lh">
+          <div className="label live-head">
             <span className="dot off" />
             {title}
           </div>
-          <div className="n msg">{msg}</div>
-          {hint && <div className="l">{hint}</div>}
+          <div className="num msg">{msg}</div>
+          {hint && <div className="label">{hint}</div>}
         </div>
       </div>
     </div>
@@ -144,11 +144,11 @@ export function LivePanel({ liveUrl }: LivePanelProps) {
       <section className="live" id="livePanel" aria-label="실시간 접속 현황">
         <LiveToggle open onClick={toggleCollapsed} />
         <div className="live-stat" id="liveStatBox">
-          <div className="l lh">
+          <div className="label live-head">
             <span className={`dot${live.stale ? ' off' : ''}`} />
             지금 접속 중 (최근 30분)
           </div>
-          <div className="n">
+          <div className="num">
             {odoDigits
               ? odoDigits.map((d, idx) =>
                   d.same ? (
@@ -169,7 +169,7 @@ export function LivePanel({ liveUrl }: LivePanelProps) {
               <DeltaChip d={deltaInfo.d} />
             )}
           </div>
-          <div className="l">
+          <div className="label">
             {dev || '\u00a0'} ·{' '}
             <time id="liveAgo" data-at={live.at} dateTime={live.at}>
               {agoText(ago)}
@@ -179,7 +179,7 @@ export function LivePanel({ liveUrl }: LivePanelProps) {
         </div>
 
         <div className="live-pages" id="livePagesBox">
-          <div className="l lh">지금 보는 페이지</div>
+          <div className="label live-head">지금 보는 페이지</div>
           <ul>
             {(live.pages || []).length > 0 ? (
               (live.pages || []).slice(0, 5).map((r, idx) => (

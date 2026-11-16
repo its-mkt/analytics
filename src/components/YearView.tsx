@@ -107,7 +107,7 @@ export function YearView({
           <DeltaBadge cur={total} prev={prevVal} label={prevLabel} />
         ) : null,
       sub: (
-        <div className="l sub1 sub-top" title={tooltip}>
+        <div className="label sub1 sub-top" title={tooltip}>
           {prevVal != null ? `${prevLabel} ${fmt(prevVal)}` : `${prevLabel} ―`}
         </div>
       ),
@@ -137,7 +137,7 @@ export function YearView({
         <DeltaBadge cur={quoteTotal} prev={pyQuoteTotal} label={prevLabel} />
       ) : null,
     sub: (
-      <div className="l sub1 sub-top" title="고도몰 DB 견적 실접수 건수 기준">
+      <div className="label sub1 sub-top" title="고도몰 DB 견적 실접수 건수 기준">
         고도몰 DB 실건수{pyQuoteTotal != null ? ` (${prevLabel} ${fmt(pyQuoteTotal)})` : ''}
       </div>
     ),

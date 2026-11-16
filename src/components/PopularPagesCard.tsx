@@ -63,9 +63,9 @@ export function PopularPagesCard({
             <tr>
               <th className="th-rank">#</th>
               <th className="th-page">페이지</th>
-              <th className="n th-stat">조회수</th>
-              <th className="n th-stat">방문자</th>
-              <th className="n hm th-stat">체류</th>
+              <th className="num th-stat">조회수</th>
+              <th className="num th-stat">방문자</th>
+              <th className="num hide-mobile th-stat">체류</th>
             </tr>
           </thead>
           <tbody>
@@ -75,7 +75,7 @@ export function PopularPagesCard({
               return (
                 <tr
                   key={p.pagePath}
-                  className="go"
+                  className="link"
                   title="누르면 이 페이지의 상세 통계"
                   onClick={() => onOpenPage(p.pagePath)}
                 >
@@ -83,7 +83,7 @@ export function PopularPagesCard({
                     <RankBadge rank={idx + 1} />
                   </td>
                   <td className="td-page">
-                    <span className="tx" title={p.pagePath}>
+                    <span className="cell-text" title={p.pagePath}>
                       {isSusp && (
                         <span
                           className="flag flag-warning"
@@ -102,9 +102,9 @@ export function PopularPagesCard({
                     </span>
                     <ProgressBar value={p.screenPageViews} max={pmax} />
                   </td>
-                  <td className="n td-stat">{fmt(p.screenPageViews)}</td>
-                  <td className="n td-stat">{fmt(p.activeUsers)}</td>
-                  <td className="n hm td-stat">
+                  <td className="num td-stat">{fmt(p.screenPageViews)}</td>
+                  <td className="num td-stat">{fmt(p.activeUsers)}</td>
+                  <td className="num hide-mobile td-stat">
                     {dur(
                       p.activeUsers
                         ? p.userEngagementDuration / p.activeUsers

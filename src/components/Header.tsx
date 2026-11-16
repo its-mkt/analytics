@@ -21,7 +21,7 @@ export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme,
   return (
     <header className="top">
       <Button
-        className="ic burger"
+        className="icon burger"
         id="burger"
         aria-label="메뉴 열기"
         aria-expanded={drawerOpen}
@@ -31,17 +31,17 @@ export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme,
       />
 
       <h1>
-        <span className="ttx">방문 &amp; 전환 대시보드 </span>
+        <span className="crumb-root">방문 &amp; 전환 대시보드 </span>
         <span className="crumb" id="crumb">
           {title}
         </span>
       </h1>
 
-      <span className="sp" />
+      <span className="spacer" />
 
       <div className="acts">
         <Button
-          className="ic top-search"
+          className="icon top-search"
           id="btnSearch"
           aria-label="검색"
           title="검색 (Ctrl+K)"
@@ -64,7 +64,7 @@ export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme,
         {/* 테마 스위치 — 모양이 달라(.tgl) 공용 Button 이 아닌 전용 마크업 */}
         <button
           type="button"
-          className="tgl"
+          className="toggle"
           id="theme"
           role="switch"
           aria-checked={isDark}
@@ -72,13 +72,13 @@ export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme,
           title={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
           onClick={onToggleTheme}
         >
-          <span className="tgl-icon tgl-sun" aria-hidden="true">
+          <span className="toggle-icon toggle-sun" aria-hidden="true">
             <Sun size={12} strokeWidth={2.4} />
           </span>
-          <span className="tgl-icon tgl-moon" aria-hidden="true">
+          <span className="toggle-icon toggle-moon" aria-hidden="true">
             <Moon size={12} strokeWidth={2.4} />
           </span>
-          <i className="tgl-thumb" aria-hidden="true" />
+          <i className="toggle-thumb" aria-hidden="true" />
         </button>
       </div>
     </header>

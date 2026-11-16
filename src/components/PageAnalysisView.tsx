@@ -98,8 +98,8 @@ export function PageAnalysisView({
               <thead>
                 <tr>
                   <th>월</th>
-                  <th className="n">조회수</th>
-                  <th className="n">방문자</th>
+                  <th className="num">조회수</th>
+                  <th className="num">방문자</th>
                 </tr>
               </thead>
               <tbody>
@@ -108,8 +108,8 @@ export function PageAnalysisView({
                   .map((r) => (
                     <tr key={r.month}>
                       <td>{r.month}</td>
-                      <td className="n">{fmt(r.views)}</td>
-                      <td className="n">{fmt(r.users)}</td>
+                      <td className="num">{fmt(r.views)}</td>
+                      <td className="num">{fmt(r.users)}</td>
                     </tr>
                   ))}
               </tbody>

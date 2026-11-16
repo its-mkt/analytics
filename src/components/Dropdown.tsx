@@ -95,13 +95,13 @@ export function Dropdown<T extends string | number>({
 
   return (
     <div
-      className={`dd${open ? ' open' : ''}${disabled ? ' disabled' : ''}${className ? ` ${className}` : ''}`}
+      className={`dropdown${open ? ' open' : ''}${disabled ? ' disabled' : ''}${className ? ` ${className}` : ''}`}
       ref={rootRef}
       id={id}
     >
       <button
         type="button"
-        className="dd-trigger"
+        className="dropdown-trigger"
         ref={triggerRef}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -111,12 +111,12 @@ export function Dropdown<T extends string | number>({
         onClick={() => (open ? close() : openList())}
       >
         <span>{selected ? selected.label : String(value)}</span>
-        <ChevronDown size={14} className="dd-chev" aria-hidden="true" />
+        <ChevronDown size={14} className="dropdown-chev" aria-hidden="true" />
       </button>
 
       {open && (
         <div
-          className="dd-menu"
+          className="dropdown-menu"
           id={listId}
           ref={listRef}
           role="listbox"
@@ -134,7 +134,7 @@ export function Dropdown<T extends string | number>({
                 data-idx={idx}
                 aria-selected={isSelected}
                 aria-disabled={opt.disabled || undefined}
-                className={`dd-opt${isSelected ? ' on' : ''}${isActive ? ' active' : ''}${
+                className={`dropdown-opt${isSelected ? ' on' : ''}${isActive ? ' active' : ''}${
                   opt.disabled ? ' disabled' : ''
                 }`}
                 title={opt.title}
@@ -143,7 +143,7 @@ export function Dropdown<T extends string | number>({
               >
                 <span>{opt.label}</span>
                 {isSelected && (
-                  <Check size={14} className="dd-check" aria-hidden="true" />
+                  <Check size={14} className="dropdown-check" aria-hidden="true" />
                 )}
               </div>
             );
