@@ -104,6 +104,8 @@ export function YearView({
           cur: signTotal,
           prev: prevSignTotal,
           cmpLabel: prevLabel,
+          // 월 화면 온코어 카드와 같이 아래 줄에 주문(GA4 주문 완료 화면 세션)
+          detail: [['주문', `${fmt(ks.reduce((n, k) => n + (okM(months, k)?.conv?.total?.order?.sessions || 0), 0))}건`]],
           title: hasGodoSign ? '고도몰 DB 실가입자 수 합산' : 'GA4 가입 완료 화면 기준',
         },
     {

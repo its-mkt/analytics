@@ -234,12 +234,16 @@ export function ConversionSection({
 
           const name = getDefShortName(d);
           // 실데이터(시트·회원 DB)가 있는 지표인데 연동이 실패하면 GA4 완료화면 세션으로 대신하고 아래 줄에 기준을 적는다
-          const fallback = (isEstimate || isSignup) && actualCount == null;
-          const detail: Array<[string, string | number]> = fallback
-            ? [['기준', 'GA4 완료화면']]
-            : cats
+          // 실데이터가 연동되는 사이트(아이티켓)에서 그 연동이 실패했을 때만 '대체값'이다 — 온코어 가입은 원래 GA4 기준
+          const fallback = actualCount == null && (isEstimate || (isSignup && godoSignups != null));
+          // 모든 카드에 아래 줄: 견적은 카테고리, 나머지는 전환율(완료 화면을 본 세션 ÷ 전체 세션)
+          const rate: [string, string] = ['전환율', pct(t.sessions, monthData.total.sessions)];
+          const detail: Array<[string, string | number]> =
+            isEstimate && !fallback && cats
               ? Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 3)
-              : [];
+              : fallback
+                ? [['기준', 'GA4 완료화면'], rate]
+                : [rate];
 
           return {
             label: `${+monthData.month.slice(5)}월 ${name}${monthData.partial ? ' (진행 중)' : ''}`,
@@ -250,9 +254,9 @@ export function ConversionSection({
             prev: pv ?? null,
             cmpLabel: '전월',
             detail,
-            title: actualCount != null
+            title: `${actualCount != null
               ? (isEstimate ? '견적문의 시트 실접수 기준' : '고도몰 회원 DB 가입일 기준')
-              : 'GA4 완료화면을 본 세션 기준',
+              : 'GA4 완료화면을 본 세션 기준'} · 전환율은 GA4 완료화면을 본 세션 ÷ 전체 세션`,
           };
         })}
       />

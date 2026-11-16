@@ -1,5 +1,7 @@
 import type { NamesMap, PageAnalysisResult } from '../types/analytics';
-import { dur } from './format';
+import type { KpiItem } from '../components/KpiCardsGrid';
+import { dur, fmt, pct } from './format';
+import { prevKey } from './metrics';
 
 /**
  * 쿼리(URL, 상품번호 등)로부터 화면 표시용 제목과 부제목을 도출합니다.
@@ -55,27 +57,60 @@ export function buildPageDailySeries(
 /**
  * 페이지 분석 상단 5대 핵심 KPI 아이템 배열을 생성합니다.
  */
-export function buildPageKpis(result: PageAnalysisResult): Array<{
-  label: string;
-  value: string | number;
-}> {
+/**
+ * 페이지 분석 KPI 4장 — 월 화면과 같은 규칙(ad-insight KpiCard): 이름에 기간, 단위, 비교 하나(전월), 아래 줄.
+ * 전월 비교는 페이지 월별 값(monthly)이 있는 조회수·방문자만 하고, 나머지는 '– 전월 값 없음'.
+ */
+export function buildPageKpis(result: PageAnalysisResult): KpiItem[] {
   const t = result.total || {};
-  const totalViews = t.screenPageViews || 0;
-  const activeUsers = t.activeUsers || 0;
+  const views = t.screenPageViews || 0;
+  const users = t.activeUsers || 0;
+  const sessions = t.sessions || 0;
+  const month = result.month || '';
+  const name = (label: string) => (month ? `${+month.slice(5)}월 ` : '') + label + (result.partial ? ' (진행 중)' : '');
+  const prevRow = month ? (result.monthly || []).find((r) => r.month === prevKey(month)) : undefined;
+  const entry = result.entry || { sessions: 0, conv: {} as Record<string, number> };
+  const entryConv = Object.values(entry.conv || {}).reduce((a, n) => a + n, 0);
 
   return [
-    { label: '조회수', value: totalViews },
-    { label: '방문자', value: activeUsers },
-    { label: '세션', value: t.sessions || 0 },
     {
-      label: '처음 들어온 방문',
-      value: (result.entry || { sessions: 0 }).sessions,
+      label: name('조회수'),
+      value: views,
+      unit: '회',
+      cur: views,
+      prev: prevRow ? prevRow.screenPageViews : null,
+      cmpLabel: '전월',
+      detail: [['방문자당', users ? `${(views / users).toFixed(1)}회` : '―']],
     },
     {
-      label: '방문자당 체류시간',
-      value: dur(
-        activeUsers ? (t.userEngagementDuration || 0) / activeUsers : 0,
-      ),
+      label: name('방문자'),
+      value: users,
+      unit: '명',
+      cur: users,
+      prev: prevRow ? prevRow.activeUsers : null,
+      cmpLabel: '전월',
+      detail: [['세션', `${fmt(sessions)}회`]],
+    },
+    {
+      label: name('처음 들어온 방문'),
+      value: entry.sessions,
+      unit: '회',
+      // 전월 값을 받지 않는 지표 — 카드 줄을 맞추려고 규칙대로 '– 전월 값 없음'
+      cur: entry.sessions,
+      prev: null,
+      cmpLabel: '전월',
+      detail: [
+        ['전환', `${fmt(entryConv)}건`],
+        ['전환율', pct(entryConv, entry.sessions)],
+      ],
+      title: '이 페이지로 처음 들어온(랜딩) 세션과 그중 전환 완료 화면까지 간 세션',
+    },
+    {
+      label: name('방문자당 체류'),
+      value: dur(users ? (t.userEngagementDuration || 0) / users : 0),
+      prev: null,
+      cmpLabel: '전월',
+      detail: [['세션당', dur(sessions ? (t.userEngagementDuration || 0) / sessions : 0)]],
     },
   ];
 }
