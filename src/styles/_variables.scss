@@ -57,6 +57,8 @@ $bp-sm: 480px;
   --radius-btn: 999px; // 누르는 것(버튼·아이콘 버튼·세그먼트·칩·기간 줄)은 알약 — ad-insight 와 부품을 같이 쓰면 그쪽은 0
   --accbg: #eceefb;
   --accink: #4650b8;
+  // 마우스 올림 배경 — 글자색을 6% 섞은 중립 회색(두 테마 공통). 선택됨(.on)의 강조색 배경(--accbg)과 구분된다
+  --hover: color-mix(in srgb, var(--ink) 6%, transparent);
   --hi: #f59e0b;
   --hi-ink: #b45309;
   --ok: #13803a;

@@ -184,8 +184,10 @@
   cursor: pointer;
   text-align: left;
 
+  // 마우스 올림은 중립 회색, 선택됨은 강조색 — 같은 색이면 어디를 보고 있는지 헷갈린다
   &:hover:not(:disabled):not(.on) {
-    background: var(--accbg);
+    background: var(--hover);
+    color: var(--ink);
   }
 
   &.on {

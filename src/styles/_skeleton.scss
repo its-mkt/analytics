@@ -120,7 +120,19 @@
   }
 }
 
-// 스켈레톤 실시간 패널
+// 스켈레톤 실시간 패널 — 접힌 상태 (틀은 실제 .live.live-collapsed 를 그대로 쓰고 값 자리만)
+.skel-live-collapsed-val {
+  width: 2.5rem;
+  height: var(--h-20);
+}
+
+.skel-live-collapsed-sub {
+  width: 11rem;
+  max-width: 40vw;
+  height: 0.75rem;
+}
+
+// 스켈레톤 실시간 패널 — 펼친 상태
 .skel-live {
   display: grid;
   grid-template-columns: minmax(13rem, 16rem) minmax(0, 1fr);
@@ -130,7 +142,7 @@
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 0.75rem;
-  padding: 1.25rem 1.5rem;
+  padding: 1rem; // 실제 실시간 패널(.live)과 같은 여백
   box-shadow: var(--sh);
   margin-bottom: 1rem;
 
