@@ -106,7 +106,7 @@
 
     .dd-trigger {
       width: 100%;
-      height: var(--h-32);
+      height: var(--h-40);
       padding: 0 0.5rem;
       border-color: transparent;
       border-radius: var(--radius-btn); // 마우스를 올렸을 때 배경도 알약
@@ -190,7 +190,7 @@
   color: var(--ink2);
   border-radius: var(--radius-btn); // 사이드바 메뉴도 누르는 것 — 알약
   height: var(--h-40);
-  padding: 0 0.75rem;
+  padding: 0 1rem;
   font-size: 0.875rem;
   cursor: pointer;
   text-align: left;
@@ -335,7 +335,7 @@
 
 // 헤더 검색 버튼 (아이콘만, 정사각형)
 .top-search {
-  width: 2rem;
+  width: var(--h-40); // .btn 높이와 같게 — 정사각형(알약이면 동그라미)
   padding: 0;
   justify-content: center;
 }
