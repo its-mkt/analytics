@@ -1,21 +1,52 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Clock, Lock, ShieldOff, TriangleAlert } from 'lucide-react';
+import { ChartNoAxesCombined, Clock, Layers, Lock, MailCheck, ShieldCheck, ShieldOff, TriangleAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './Button';
 import { MonthViewSkeleton } from './DashboardSkeleton';
 
 const GATE_TITLE = '방문 & 전환 대시보드';
 
-/** 접속 화면 한 장 — 가운데 카드 (ad-insight 접속 화면과 같은 모양) */
+/** 접속 화면 왼쪽 서비스 소개 (ad-insight 와 같은 구성, 휴대폰에서는 제목·한 줄 소개만) */
+function GateBrand() {
+  return (
+    <aside className="access-gate-brand">
+      <span className="gate-brand-mark" aria-hidden="true">
+        <ChartNoAxesCombined size={20} />
+      </span>
+      <p className="gate-brand-name">{GATE_TITLE}</p>
+      <p className="gate-brand-lead">아이티켓·온코어 방문과 전환 흐름을 한 화면에서 봅니다.</p>
+      <ul className="gate-brand-points">
+        <li>
+          <ShieldCheck size={16} aria-hidden="true" />
+          관리자가 승인한 계정만 열람
+        </li>
+        <li>
+          <MailCheck size={16} aria-hidden="true" />
+          이메일 인증번호로 간편 로그인
+        </li>
+        <li>
+          <Layers size={16} aria-hidden="true" />
+          한 계정으로 광고 인사이트·애널리틱스
+        </li>
+      </ul>
+      <p className="gate-brand-foot">계정·권한 문의는 마케팅팀으로 연락해 주세요.</p>
+    </aside>
+  );
+}
+
+/** 접속 화면 한 장 — 왼쪽 서비스 소개 + 오른쪽 카드 (ad-insight 접속 화면과 같은 모양) */
 function GateCard({ icon, title, desc, children }: { icon: ReactNode; title: string; desc: ReactNode; children?: ReactNode }) {
   return (
     <div className="access-gate">
-      <section className="card gate-card" role="main" aria-labelledby="access-gate-title">
-        <div className="gate-icon">{icon}</div>
-        <h2 id="access-gate-title">{title}</h2>
-        <p>{desc}</p>
-        {children}
-      </section>
+      <div className="access-gate-shell">
+        <GateBrand />
+        <section className="card gate-card" role="main" aria-labelledby="access-gate-title">
+          <div className="gate-icon">{icon}</div>
+          <h2 id="access-gate-title">{title}</h2>
+          <p>{desc}</p>
+          {children}
+        </section>
+      </div>
     </div>
   );
 }
@@ -202,7 +233,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
     return (
       <GateCard
         icon={<Lock size={20} aria-hidden="true" />}
-        title={login ? GATE_TITLE : '회원가입 및 열람 요청'}
+        title={login ? '로그인' : '회원가입 및 열람 요청'}
         desc={login ? '승인된 계정만 볼 수 있습니다. 광고 인사이트와 같은 계정으로, 이메일로 받은 인증번호로 로그인합니다.' : '이메일 인증번호로 가입과 함께 관리자에게 열람 승인을 요청합니다. 승인되면 광고 인사이트와 함께 볼 수 있습니다.'}
       >
         <EmailCodeForm key={mode} mode={mode} />
