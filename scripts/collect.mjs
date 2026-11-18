@@ -95,11 +95,15 @@ function collectMock(m) {
 }
 
 // 가장 간단한 경로: Apps Script 웹앱(apps-script/Code.gs)이 만들어 둔 JSON 을 받아 월별 파일로 저장한다.
+// 수집기 웹앱은 승인된 로그인 계정이나 서버 키(Secret GA4_SERVER_KEY = 웹앱 스크립트 속성 SERVER_KEY)에만 데이터를 준다
+const withKey = (url) => (process.env.GA4_SERVER_KEY ? `${url}${url.includes('?') ? '&' : '?'}key=${encodeURIComponent(process.env.GA4_SERVER_KEY.trim())}` : url);
+
 if (process.env.GA4_WEBAPP_URL) {
-  const res = await fetch(process.env.GA4_WEBAPP_URL.trim(), { redirect: 'follow' });
+  const res = await fetch(withKey(process.env.GA4_WEBAPP_URL.trim()), { redirect: 'follow' });
   const text = await res.text();
   let store;
   try { store = JSON.parse(text); } catch { console.error(`웹앱 응답이 JSON 이 아닙니다 (HTTP ${res.status}). 웹앱 배포의 접근 권한이 "모든 사용자"인지 확인하세요.`); process.exit(1); }
+  if (store.error === 'login_required') { console.error('수집기 웹앱이 서버 키를 받지 않았습니다. Secret GA4_SERVER_KEY 와 웹앱 스크립트 속성 SERVER_KEY 가 같은지 확인하세요.'); process.exit(1); }
   const got = Object.keys(store.months || {}).sort();
   if (!got.length) { console.error('웹앱에 아직 수집된 월이 없습니다. Apps Script 에서 collectAll 을 실행하세요.'); process.exit(1); }
   for (const m of got) fs.writeFileSync(path.join(OUT, `${m}.json`), JSON.stringify(store.months[m]));
@@ -140,7 +144,7 @@ async function collectOncoreFromWebapp(base) {
   if (!oc) return null;
   const dir = path.join(DATA, 'oncore', 'ga4');
   try {
-    const res = await fetch(`${base}?site=oncore`, { redirect: 'follow' });
+    const res = await fetch(withKey(`${base}?site=oncore`), { redirect: 'follow' });
     const store = JSON.parse(await res.text());
     if (store.site !== 'oncore') { console.warn('웹앱에 온코어 모드가 없어 온코어 수집을 건너뜁니다 (Code.gs 새 버전 배포 필요).'); return null; }
     const got = Object.keys(store.months || {}).filter((m) => m >= (oc.startMonth || '0000-00') && store.months[m].total?.sessions > 0 && !store.months[m].empty).sort();

@@ -6,14 +6,14 @@
   "description": "itket.com GA4 월간 대시보드 (React + TypeScript + SCSS + Vite)",
   "scripts": {
     "dev": "vite",
-    "sync:quotes": "node scripts/sync-godomall-quotes.mjs",
-    "build": "node scripts/sync-godomall-quotes.mjs && tsc -b && node scripts/build-site.mjs",
+    "build": "tsc -b && node scripts/build-site.mjs",
     "preview": "vite preview --outDir site",
     "typecheck": "tsc -b",
     "collect": "node scripts/collect.mjs",
     "mock": "GA4_MOCK=1 DATA_DIR=.sample/data SITE_DIR=.sample/site node scripts/collect.mjs && DATA_DIR=.sample/data SITE_DIR=.sample/site node scripts/build-site.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^1.60.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
