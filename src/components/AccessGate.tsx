@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Clock, Lock, ShieldOff, TriangleAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './Button';
@@ -45,63 +45,92 @@ function GateSubmit({ busy, busyText, children }: { busy: boolean; busyText: str
   );
 }
 
-function LoginForm() {
-  const { loginWithPassword } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const submit = async (e: { preventDefault: () => void }) => {
-    e.preventDefault();
-    setError('');
-    setBusy(true);
-    const res = await loginWithPassword(email, password);
-    setBusy(false);
-    if (res.error) setError(res.error);
-  };
-  return (
-    <form className="gate-form" onSubmit={submit}>
-      <GateInput name="username" autoComplete="username" placeholder="이메일" value={email} onChange={setEmail} err={!!error} autoFocus />
-      <GateInput type="password" name="password" autoComplete="current-password" placeholder="비밀번호" value={password} onChange={setPassword} err={!!error} />
-      {error && <GateError message={error} />}
-      <GateSubmit busy={busy} busyText="확인 중...">로그인</GateSubmit>
-    </form>
-  );
-}
+/** 인증번호를 다시 보낼 수 있을 때까지 기다리는 초 (Supabase 기본 제한과 같다) */
+const RESEND_SEC = 60;
 
-/** 회원가입 — 가입 후 관리자에게 승인 요청을 보낸다 (ad-insight 와 같은 계정·명단) */
-function SignUpForm({ onSent }: { onSent: (needsEmailConfirm: boolean) => void }) {
-  const { signUp } = useAuth();
+/**
+ * 이메일 인증번호 로그인·회원가입 (ad-insight 의 EmailCodeForm 과 같은 흐름) — 비밀번호 없이 메일로 받은 6자리 번호로 로그인한다.
+ * login: 가입된 이메일만 · signup: 이름·소속도 받고 처음 쓰는 이메일은 계정을 만든 뒤 열람 승인을 요청
+ */
+function EmailCodeForm({ mode }: { mode: 'login' | 'signup' }) {
+  const { sendEmailCode, verifyEmailCode } = useAuth();
+  const signup = mode === 'signup';
   const [name, setName] = useState('');
   const [team, setTeam] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [password2, setPassword2] = useState('');
+  const [code, setCode] = useState('');
+  const [sentTo, setSentTo] = useState('');
+  const [wait, setWait] = useState(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const submit = async (e: { preventDefault: () => void }) => {
-    e.preventDefault();
+
+  useEffect(() => {
+    if (wait <= 0) return;
+    const t = setTimeout(() => setWait((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
+
+  const info = signup ? { name, team } : undefined;
+  const send = async () => {
     setError('');
-    if (password !== password2) {
-      setError('비밀번호 확인이 일치하지 않습니다.');
-      return;
-    }
     setBusy(true);
-    const res = await signUp({ name, team, email, password });
+    const res = await sendEmailCode(email, info);
+    setBusy(false);
+    if (res.error) return setError(res.error);
+    setSentTo(email.trim());
+    setCode('');
+    setWait(RESEND_SEC);
+  };
+  const verify = async () => {
+    setError('');
+    setBusy(true);
+    const res = await verifyEmailCode(sentTo, code, info);
     setBusy(false);
     if (res.error) setError(res.error);
-    else onSent(!!res.needsEmailConfirm);
   };
   const err = !!error;
+
+  if (!sentTo) {
+    return (
+      <form className="gate-form" onSubmit={(e) => { e.preventDefault(); void send(); }}>
+        {signup && (
+          <>
+            <GateInput name="name" autoComplete="name" placeholder="이름" value={name} onChange={setName} err={err} />
+            <GateInput name="team" autoComplete="organization" placeholder="소속 (회사·팀)" value={team} onChange={setTeam} err={err} />
+          </>
+        )}
+        <GateInput type="email" name="email" autoComplete="email" placeholder="이메일" value={email} onChange={setEmail} err={err} autoFocus={!signup} />
+        {error && <GateError message={error} />}
+        <GateSubmit busy={busy} busyText="보내는 중...">인증번호 받기</GateSubmit>
+      </form>
+    );
+  }
   return (
-    <form className="gate-form" onSubmit={submit}>
-      <GateInput name="name" autoComplete="name" placeholder="이름" value={name} onChange={setName} err={err} />
-      <GateInput name="team" autoComplete="organization" placeholder="소속 (회사·팀)" value={team} onChange={setTeam} err={err} />
-      <GateInput type="email" name="email" autoComplete="email" placeholder="이메일" value={email} onChange={setEmail} err={err} />
-      <GateInput type="password" name="new-password" autoComplete="new-password" placeholder="비밀번호 (6자 이상)" value={password} onChange={setPassword} err={err} />
-      <GateInput type="password" name="new-password2" autoComplete="new-password" placeholder="비밀번호 확인" value={password2} onChange={setPassword2} err={err} />
+    <form className="gate-form" onSubmit={(e) => { e.preventDefault(); void verify(); }}>
+      <p className="gate-code-sent">
+        <strong>{sentTo}</strong> 로 보낸 6자리 인증번호를 입력해 주세요. 메일이 없으면 스팸함도 확인해 주세요.
+      </p>
+      <input
+        className={`gate-input gate-code${err ? ' err' : ''}`}
+        name="one-time-code"
+        autoComplete="one-time-code"
+        inputMode="numeric"
+        maxLength={6}
+        placeholder="인증번호 6자리"
+        value={code}
+        onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+        autoFocus
+      />
       {error && <GateError message={error} />}
-      <GateSubmit busy={busy} busyText="보내는 중...">회원가입</GateSubmit>
+      <GateSubmit busy={busy} busyText="확인 중...">{signup ? '회원가입 및 열람 요청' : '로그인'}</GateSubmit>
+      <div className="gate-code-actions">
+        <button type="button" className="gate-link" disabled={wait > 0 || busy} onClick={() => void send()}>
+          {wait > 0 ? `다시 보내기 (${wait}초)` : '인증번호 다시 보내기'}
+        </button>
+        <button type="button" className="gate-link" onClick={() => { setSentTo(''); setError(''); }}>
+          이메일 바꾸기
+        </button>
+      </div>
     </form>
   );
 }
@@ -150,7 +179,6 @@ function GateActions({ recheck }: { recheck?: boolean }) {
 export function AccessGate({ children }: { children: ReactNode }) {
   const { loading, user, role, canView, refreshRole } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [sent, setSent] = useState<null | { confirm: boolean }>(null);
 
   // 권한을 다시 확인하는 동안에도 이미 보고 있던 화면은 그대로 둔다
   if (canView) return <>{children}</>;
@@ -164,27 +192,14 @@ export function AccessGate({ children }: { children: ReactNode }) {
   }
 
   if (!user) {
-    if (sent) {
-      return (
-        <GateCard
-          icon={<Clock size={20} aria-hidden="true" />}
-          title="회원가입 요청을 보냈습니다"
-          desc={sent.confirm ? '받은 메일의 인증 링크를 누른 뒤 로그인해 주세요. 관리자가 승인하면 데이터를 볼 수 있습니다.' : '관리자가 승인하면 로그인해서 데이터를 볼 수 있습니다.'}
-        >
-          <Button variant="primary" className="btn-gate" onClick={() => { setSent(null); setMode('login'); }}>
-            로그인 화면으로
-          </Button>
-        </GateCard>
-      );
-    }
     const login = mode === 'login';
     return (
       <GateCard
         icon={<Lock size={20} aria-hidden="true" />}
-        title={login ? GATE_TITLE : '회원가입'}
-        desc={login ? '승인된 계정만 볼 수 있습니다. 광고 인사이트 계정으로 로그인하세요.' : '가입하면 관리자에게 승인 요청이 갑니다. 승인되면 광고 인사이트와 함께 볼 수 있습니다.'}
+        title={login ? GATE_TITLE : '회원가입 및 열람 요청'}
+        desc={login ? '승인된 계정만 볼 수 있습니다. 광고 인사이트와 같은 계정으로, 이메일로 받은 인증번호로 로그인합니다.' : '이메일 인증번호로 가입과 함께 관리자에게 열람 승인을 요청합니다. 승인되면 광고 인사이트와 함께 볼 수 있습니다.'}
       >
-        {login ? <LoginForm /> : <SignUpForm onSent={(confirm) => setSent({ confirm })} />}
+        <EmailCodeForm key={mode} mode={mode} />
         <p className="gate-switch">
           {login ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'}{' '}
           <button type="button" className="gate-link" onClick={() => setMode(login ? 'signup' : 'login')}>
