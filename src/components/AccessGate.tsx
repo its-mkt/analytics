@@ -118,7 +118,7 @@ function EmailCodeForm({ mode }: { mode: 'login' | 'signup' }) {
         maxLength={6}
         placeholder="인증번호 6자리"
         value={code}
-        onChange={(e) => setCode(e.target.value.replace(/D/g, ''))}
+        onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
         autoFocus
       />
       {error && <GateError message={error} />}

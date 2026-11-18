@@ -51,7 +51,7 @@ const toAuthUser = (u: Session['user']): AuthUser => ({
   team: u.user_metadata?.team,
 });
 
-const isEmail = (v: string) => /^[^s@]+@[^s@]+.[^s@]{2,}$/.test(v);
+const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 
 /** 인증번호 보내기·확인 오류 → 화면 문구 (ad-insight 와 같은 문구) */
 const codeErrorText = (message: string): string => {
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const verifyEmailCode = async (email: string, code: string, signup?: SignUpInfo): Promise<{ error?: string }> => {
-    const token = code.replace(/D/g, '');
+    const token = code.replace(/\D/g, '');
     if (token.length < 6) return { error: '메일로 받은 6자리 인증번호를 입력해 주세요.' };
     const { data, error } = await supabase.auth.verifyOtp({ email: toLoginEmail(email), token, type: 'email' });
     if (error || !data.session) return { error: codeErrorText(error?.message || 'invalid') };
