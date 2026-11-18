@@ -160,3 +160,10 @@
     }
   }
 }
+
+// 로그인 방식 전환 (인증번호 ↔ 비밀번호) — ad-insight 와 같은 자리
+.gate-card p.gate-method {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  text-align: center;
+}
