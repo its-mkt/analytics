@@ -22,7 +22,7 @@ function GateBrand() {
         </li>
         <li>
           <MailCheck size={16} aria-hidden="true" />
-          이메일 인증번호로 간편 로그인
+          이메일 인증을 거친 실제 계정만 가입
         </li>
         <li>
           <Layers size={16} aria-hidden="true" />
