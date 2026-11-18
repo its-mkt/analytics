@@ -38,12 +38,12 @@ export async function fetchAccessRole(token: string): Promise<AccessRole | null>
   }
 }
 
-/** 가입 요청 — ad-insight 웹앱이 명단에 승인 대기로 넣고 관리자에게 팀즈·메일로 알린다 */
-export async function postAccessRequest(email: string, name: string, team: string): Promise<{ success?: boolean; error?: string }> {
+/** 열람 요청 — ad-insight 웹앱이 로그인 토큰의 이메일을 명단에 승인 대기로 넣고 관리자에게 팀즈·메일로 알린다 */
+export async function postAccessRequest(name: string, team: string, token?: string): Promise<{ success?: boolean; error?: string }> {
   const res = await fetch(ACCESS_WEBAPP_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'requestAccess', email, name, team }),
+    body: JSON.stringify({ action: 'requestAccess', access_token: token || (await currentAccessToken()), name, team }),
   });
   return (await res.json()) as { success?: boolean; error?: string };
 }
