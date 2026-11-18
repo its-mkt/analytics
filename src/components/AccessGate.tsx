@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Clock, Lock, ShieldOff, TriangleAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './Button';
-import { Skeleton } from './Skeleton';
+import { MonthViewSkeleton } from './DashboardSkeleton';
 
 const GATE_TITLE = '방문 & 전환 대시보드';
 
@@ -183,11 +183,17 @@ export function AccessGate({ children }: { children: ReactNode }) {
   // 권한을 다시 확인하는 동안에도 이미 보고 있던 화면은 그대로 둔다
   if (canView) return <>{children}</>;
 
+  // 권한 확인 중 — 잠금 카드 대신 대시보드 모양 로딩 (ad-insight 접속 화면과 같은 방식)
   if (loading) {
     return (
-      <GateCard icon={<Lock size={20} aria-hidden="true" />} title={GATE_TITLE} desc="접속 권한을 확인하고 있습니다.">
-        <Skeleton width="100%" height="2.625rem" />
-      </GateCard>
+      <div className="site-loading access-loading">
+        <div className="access-loading-bar" aria-hidden="true" />
+        <p className="access-loading-status" role="status">
+          <Lock size={14} aria-hidden="true" />
+          접속 권한을 확인하고 있습니다
+        </p>
+        <MonthViewSkeleton tab="overview" hasEstimate />
+      </div>
     );
   }
 

@@ -38,6 +38,29 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * 계정별 마지막 열람 권한 — ad-insight 와 같은 키(같은 주소 its.itket.com)라 한쪽에서 확인되면 다른 쪽도 바로 열린다.
+ * 볼 수 있는 권한(관리자·승인)만 12시간 기억한다
+ */
+const ROLE_CACHE_KEY = 'adi_access_role';
+const ROLE_CACHE_MS = 12 * 3600 * 1000;
+const readRoleCache = (uid: string): AccessRole | null => {
+  try {
+    const c = JSON.parse(localStorage.getItem(ROLE_CACHE_KEY) || 'null') as { uid: string; role: AccessRole; at: number } | null;
+    return c && c.uid === uid && Date.now() - c.at < ROLE_CACHE_MS && canViewRole(c.role) ? c.role : null;
+  } catch {
+    return null;
+  }
+};
+const writeRoleCache = (uid: string, role: AccessRole | null) => {
+  try {
+    if (role && canViewRole(role)) localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify({ uid, role, at: Date.now() }));
+    else localStorage.removeItem(ROLE_CACHE_KEY);
+  } catch {
+    // 저장 공간을 못 쓰면 매번 확인한다
+  }
+};
+
 // 아이디만 입력하면 이 도메인을 붙인다 (ad-insight 예전 관리자 계정과 같은 규칙)
 const toLoginEmail = (loginId: string) => {
   const id = loginId.trim().toLowerCase();
@@ -102,14 +125,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setRoleLoading(false);
       return;
     }
-    setRoleLoading(true);
+    // 최근에 받은 권한이 있으면 바로 열고 뒤에서 다시 확인한다 (웹앱 확인 2~4초). 데이터는 웹앱이 토큰으로 따로 막는다
+    const remembered = readRoleCache(userId);
+    if (remembered) {
+      setRole(remembered);
+      setRoleLoading(false);
+    } else setRoleLoading(true);
     currentAccessToken()
       .then(fetchAccessRole)
       .then((next) => {
         if (!alive) return;
         // 만료된 로그인은 지우고 로그인 화면으로 (인증 콜백 안에서 Supabase 를 다시 부르면 멈출 수 있어 setTimeout)
         if (next === 'invalid') setTimeout(() => supabase.auth.signOut(), 0);
+        // 확인에 실패(null)했는데 기억한 권한이 있으면 그대로 둔다 — 웹앱 일시 장애로 잠기지 않게
+        if (next === null && remembered) return;
         setRole(next);
+        writeRoleCache(userId, next);
       })
       .finally(() => alive && setRoleLoading(false));
     return () => {
@@ -153,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    writeRoleCache('', null);
     await supabase.auth.signOut();
     setUser(null);
   };
