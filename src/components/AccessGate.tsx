@@ -52,12 +52,12 @@ const RESEND_SEC = 60;
  * 이메일 인증번호 로그인·회원가입 (ad-insight 의 EmailCodeForm 과 같은 흐름) — 비밀번호 없이 메일로 받은 6자리 번호로 로그인한다.
  * login: 가입된 이메일만 · signup: 이름·소속도 받고 처음 쓰는 이메일은 계정을 만든 뒤 열람 승인을 요청
  */
-function EmailCodeForm({ mode }: { mode: 'login' | 'signup' }) {
+function EmailCodeForm({ mode, initialEmail = '', onDone }: { mode: 'login' | 'signup'; initialEmail?: string; onDone?: (email: string) => void }) {
   const { sendEmailCode, verifyEmailCode } = useAuth();
   const signup = mode === 'signup';
   const [name, setName] = useState('');
   const [team, setTeam] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [code, setCode] = useState('');
   const [sentTo, setSentTo] = useState('');
   const [wait, setWait] = useState(0);
@@ -81,12 +81,13 @@ function EmailCodeForm({ mode }: { mode: 'login' | 'signup' }) {
     setCode('');
     setWait(RESEND_SEC);
   };
-  const verify = async () => {
+  const verify = async (value = code) => {
     setError('');
     setBusy(true);
-    const res = await verifyEmailCode(sentTo, code, info);
+    const res = await verifyEmailCode(sentTo, value, info);
     setBusy(false);
     if (res.error) setError(res.error);
+    else onDone?.(sentTo);
   };
   const err = !!error;
 
@@ -118,7 +119,12 @@ function EmailCodeForm({ mode }: { mode: 'login' | 'signup' }) {
         maxLength={6}
         placeholder="인증번호 6자리"
         value={code}
-        onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+        onChange={(e) => {
+          const v = e.target.value.replace(/\D/g, '').slice(0, 6);
+          setCode(v);
+          // 6자리를 다 넣으면(붙여넣기 포함) 버튼을 누르지 않아도 바로 확인한다
+          if (v.length === 6 && !busy) void verify(v);
+        }}
         autoFocus
       />
       {error && <GateError message={error} />}
@@ -132,6 +138,72 @@ function EmailCodeForm({ mode }: { mode: 'login' | 'signup' }) {
         </button>
       </div>
     </form>
+  );
+}
+
+/** 비밀번호 로그인 폼 — 비밀번호가 있는 계정(관리자 등)용. 브라우저에 저장한 비밀번호가 자동으로 채워진다 */
+function PasswordLoginForm({ initialEmail = '', onDone }: { initialEmail?: string; onDone?: (email: string) => void }) {
+  const { loginWithPassword } = useAuth();
+  const [loginId, setLoginId] = useState(initialEmail);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    setError('');
+    setBusy(true);
+    const res = await loginWithPassword(loginId, password);
+    setBusy(false);
+    if (res.error) setError(res.error);
+    else onDone?.(loginId.trim());
+  };
+  return (
+    <form className="gate-form" onSubmit={submit}>
+      <GateInput name="username" autoComplete="username" placeholder="이메일" value={loginId} onChange={setLoginId} err={!!error} autoFocus={!initialEmail} />
+      <GateInput type="password" name="password" autoComplete="current-password" placeholder="비밀번호" value={password} onChange={setPassword} err={!!error} autoFocus={!!initialEmail} />
+      {error && <GateError message={error} />}
+      <GateSubmit busy={busy} busyText="확인 중...">로그인</GateSubmit>
+    </form>
+  );
+}
+
+type LoginMethod = 'code' | 'password';
+
+/** 이 브라우저에서 지난번 로그인한 방식·이메일 — ad-insight 와 같은 키라 두 화면이 함께 기억한다 (편의용, 읽지 못해도 인증번호로 시작) */
+const LOGIN_PREF_KEY = 'adi_login_pref';
+function readLoginPref(): { method: LoginMethod; email: string } {
+  try {
+    const v = JSON.parse(localStorage.getItem(LOGIN_PREF_KEY) || '{}');
+    return { method: v.method === 'password' ? 'password' : 'code', email: typeof v.email === 'string' ? v.email : '' };
+  } catch {
+    return { method: 'code', email: '' };
+  }
+}
+function saveLoginPref(method: LoginMethod, email: string) {
+  try {
+    localStorage.setItem(LOGIN_PREF_KEY, JSON.stringify({ method, email }));
+  } catch {
+    // 저장하지 못해도 로그인에는 영향 없다
+  }
+}
+
+/** 로그인 — 기본은 인증번호, 비밀번호가 있는 계정은 '비밀번호로 로그인'으로 바꿔 매번 메일을 열지 않아도 된다 (ad-insight 와 같은 흐름) */
+function LoginForm() {
+  const [pref] = useState(readLoginPref);
+  const [method, setMethod] = useState<LoginMethod>(pref.method);
+  return (
+    <>
+      {method === 'password' ? (
+        <PasswordLoginForm key="password" initialEmail={pref.email} onDone={(email) => saveLoginPref('password', email)} />
+      ) : (
+        <EmailCodeForm key="code" mode="login" initialEmail={pref.email} onDone={(email) => saveLoginPref('code', email)} />
+      )}
+      <p className="gate-method">
+        <button type="button" className="gate-link" onClick={() => setMethod(method === 'password' ? 'code' : 'password')}>
+          {method === 'password' ? '인증번호로 로그인' : '비밀번호로 로그인'}
+        </button>
+      </p>
+    </>
   );
 }
 
@@ -197,9 +269,9 @@ export function AccessGate({ children }: { children: ReactNode }) {
       <GateCard
         icon={<Lock size={20} aria-hidden="true" />}
         title={login ? GATE_TITLE : '회원가입 및 열람 요청'}
-        desc={login ? '승인된 계정만 볼 수 있습니다. 광고 인사이트와 같은 계정으로, 이메일로 받은 인증번호로 로그인합니다.' : '이메일 인증번호로 가입과 함께 관리자에게 열람 승인을 요청합니다. 승인되면 광고 인사이트와 함께 볼 수 있습니다.'}
+        desc={login ? '승인된 계정만 볼 수 있습니다. 광고 인사이트와 같은 계정으로 로그인합니다.' : '이메일 인증번호로 가입과 함께 관리자에게 열람 승인을 요청합니다. 승인되면 광고 인사이트와 함께 볼 수 있습니다.'}
       >
-        <EmailCodeForm key={mode} mode={mode} />
+        {login ? <LoginForm /> : <EmailCodeForm key="signup" mode="signup" />}
         <p className="gate-switch">
           {login ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'}{' '}
           <button type="button" className="gate-link" onClick={() => setMode(login ? 'signup' : 'login')}>

@@ -29,6 +29,8 @@ interface AuthContextType {
   sendEmailCode: (email: string, signup?: SignUpInfo) => Promise<{ error?: string }>;
   /** 인증번호로 로그인한다 — signup 이면 로그인 직후 관리자에게 열람 승인을 요청한다 */
   verifyEmailCode: (email: string, code: string, signup?: SignUpInfo) => Promise<{ error?: string }>;
+  /** 이메일(gmail 은 아이디만)·비밀번호로 로그인한다 — 비밀번호가 있는 계정(관리자 등)만 */
+  loginWithPassword: (loginId: string, password: string) => Promise<{ error?: string }>;
   /** 로그인한 계정으로 승인을 (다시) 요청한다 — 요청 기록이 없거나 거절·해제된 경우 */
   requestAccess: (name: string, team: string) => Promise<{ error?: string }>;
   /** 열람 권한을 다시 확인한다 (승인됐는지 볼 때) */
@@ -132,6 +134,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error ? { error: codeErrorText(error.message) } : {};
   };
 
+  const loginWithPassword = async (loginId: string, password: string): Promise<{ error?: string }> => {
+    if (!loginId.trim() || !password) return { error: '이메일과 비밀번호를 입력해 주세요.' };
+    const { error } = await supabase.auth.signInWithPassword({ email: toLoginEmail(loginId), password });
+    if (error) {
+      console.error('Login error:', error.message);
+      if (/rate|too many/i.test(error.message)) return { error: '요청이 많아 잠시 막혔습니다. 1분 뒤 다시 시도해 주세요.' };
+      return { error: '이메일 또는 비밀번호가 맞지 않습니다. 비밀번호가 없는 계정은 인증번호로 로그인해 주세요.' };
+    }
+    return {};
+  };
+
   const verifyEmailCode = async (email: string, code: string, signup?: SignUpInfo): Promise<{ error?: string }> => {
     const token = code.replace(/\D/g, '');
     if (token.length < 6) return { error: '메일로 받은 6자리 인증번호를 입력해 주세요.' };
@@ -166,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         canView: canViewRole(role),
         sendEmailCode,
         verifyEmailCode,
+        loginWithPassword,
         requestAccess,
         refreshRole,
         logout,
