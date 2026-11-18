@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Clock, Lock, ShieldOff, TriangleAlert } from 'lucide-react';
+import { Check, Clock, Lock, ShieldOff, TriangleAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './Button';
 import { MonthViewSkeleton } from './DashboardSkeleton';
@@ -48,77 +48,11 @@ function GateSubmit({ busy, busyText, children }: { busy: boolean; busyText: str
 /** 인증번호를 다시 보낼 수 있을 때까지 기다리는 초 (Supabase 기본 제한과 같다) */
 const RESEND_SEC = 60;
 
-/**
- * 이메일 인증번호 폼 (ad-insight 의 EmailCodeForm 과 같은 흐름) — 로그인은 비밀번호로 하고, 인증번호는 메일 주인 확인에만 쓴다 (2026-11-18 사용자 결정).
- * signup: 이름·소속·이메일·비밀번호 → 인증번호 → 가입 및 열람 요청 · reset: 이메일 → 인증번호·새 비밀번호 → 바꾸고 로그인
- */
-function EmailCodeForm({ mode, initialEmail = '', onDone }: { mode: 'signup' | 'reset'; initialEmail?: string; onDone?: (email: string) => void }) {
-  const { sendEmailCode, verifyEmailCode, resetPasswordWithCode } = useAuth();
-  const signup = mode === 'signup';
-  const [name, setName] = useState('');
-  const [team, setTeam] = useState('');
-  const [email, setEmail] = useState(initialEmail);
-  const [password, setPassword] = useState('');
-  const [password2, setPassword2] = useState('');
-  const [code, setCode] = useState('');
-  const [sentTo, setSentTo] = useState('');
-  const [wait, setWait] = useState(0);
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (wait <= 0) return;
-    const t = setTimeout(() => setWait((n) => n - 1), 1000);
-    return () => clearTimeout(t);
-  }, [wait]);
-
-  const info = signup ? { name, team, password } : undefined;
-  const send = async () => {
-    setError('');
-    if (signup && password !== password2) return setError('비밀번호 확인이 일치하지 않습니다.');
-    setBusy(true);
-    const res = await sendEmailCode(email, info);
-    setBusy(false);
-    if (res.error) return setError(res.error);
-    setSentTo(email.trim());
-    setCode('');
-    setWait(RESEND_SEC);
-  };
-  const verify = async (value = code) => {
-    setError('');
-    if (!signup && password !== password2) return setError('새 비밀번호 확인이 일치하지 않습니다.');
-    setBusy(true);
-    const res = signup ? await verifyEmailCode(sentTo, value, info) : await resetPasswordWithCode(sentTo, value, password);
-    setBusy(false);
-    if (res.error) setError(res.error);
-    else onDone?.(sentTo);
-  };
-  const err = !!error;
-  const passwordFields = (label: string) => (
-    <>
-      <GateInput type="password" name="new-password" autoComplete="new-password" placeholder={`${label} (6자 이상)`} value={password} onChange={setPassword} err={err} />
-      <GateInput type="password" name="new-password2" autoComplete="new-password" placeholder={`${label} 확인`} value={password2} onChange={setPassword2} err={err} />
-    </>
-  );
-
-  if (!sentTo) {
-    return (
-      <form className="gate-form" onSubmit={(e) => { e.preventDefault(); void send(); }}>
-        {signup && (
-          <>
-            <GateInput name="name" autoComplete="name" placeholder="이름" value={name} onChange={setName} err={err} />
-            <GateInput name="team" autoComplete="organization" placeholder="소속 (회사·팀)" value={team} onChange={setTeam} err={err} />
-          </>
-        )}
-        <GateInput type="email" name="email" autoComplete="email" placeholder="이메일" value={email} onChange={setEmail} err={err} autoFocus={!signup} />
-        {signup && passwordFields('비밀번호')}
-        {error && <GateError message={error} />}
-        <GateSubmit busy={busy} busyText="보내는 중...">{signup ? '이메일 인증번호 받기' : '인증번호 받기'}</GateSubmit>
-      </form>
-    );
-  }
+/** 인증번호 입력칸 + 다시 보내기·이메일 바꾸기 — 회원가입·비밀번호 찾기가 함께 쓴다 (ad-insight CodeStep 과 같은 구성) */
+function CodeStep(props: { sentTo: string; code: string; onCode: (v: string) => void; err: boolean; wait: number; busy: boolean; onResend: () => void; onChangeEmail: () => void }) {
+  const { sentTo, code, onCode, err, wait, busy, onResend, onChangeEmail } = props;
   return (
-    <form className="gate-form" onSubmit={(e) => { e.preventDefault(); void verify(); }}>
+    <>
       <p className="gate-code-sent">
         <strong>{sentTo}</strong> 로 보낸 6자리 인증번호를 입력해 주세요. 메일이 없으면 스팸함도 확인해 주세요.
       </p>
@@ -130,25 +64,194 @@ function EmailCodeForm({ mode, initialEmail = '', onDone }: { mode: 'signup' | '
         maxLength={6}
         placeholder="인증번호 6자리"
         value={code}
-        onChange={(e) => {
-          const v = e.target.value.replace(/\D/g, '').slice(0, 6);
-          setCode(v);
-          // 회원가입은 6자리를 다 넣으면(붙여넣기 포함) 바로 확인한다 (비밀번호 찾기는 새 비밀번호를 함께 받는다)
-          if (signup && v.length === 6 && !busy) void verify(v);
-        }}
+        onChange={(e) => onCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
         autoFocus
       />
-      {!signup && passwordFields('새 비밀번호')}
-      {error && <GateError message={error} />}
-      <GateSubmit busy={busy} busyText="확인 중...">{signup ? '회원가입 및 열람 요청' : '비밀번호 바꾸고 로그인'}</GateSubmit>
       <div className="gate-code-actions">
-        <button type="button" className="gate-link" disabled={wait > 0 || busy} onClick={() => void send()}>
+        <button type="button" className="gate-link" disabled={wait > 0 || busy} onClick={onResend}>
           {wait > 0 ? `다시 보내기 (${wait}초)` : '인증번호 다시 보내기'}
         </button>
-        <button type="button" className="gate-link" onClick={() => { setSentTo(''); setError(''); }}>
+        <button type="button" className="gate-link" onClick={onChangeEmail}>
           이메일 바꾸기
         </button>
       </div>
+    </>
+  );
+}
+
+/** 인증번호 다시 보내기 대기 초 — 1초마다 줄어든다 */
+function useResendWait() {
+  const [wait, setWait] = useState(0);
+  useEffect(() => {
+    if (wait <= 0) return;
+    const t = setTimeout(() => setWait((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
+  return [wait, setWait] as const;
+}
+
+/** 회원가입 단계 */
+const SIGNUP_STEPS = ['이메일 인증', '정보 입력', '관리자 승인'] as const;
+
+/** 회원가입 진행도 — ① 이메일 인증 ② 정보 입력 ③ 관리자 승인 (ad-insight 와 같은 모양). 승인 대기 화면에서도 ③으로 이어서 보여 준다 */
+function SignupSteps({ current }: { current: 0 | 1 | 2 }) {
+  return (
+    <ol className="signup-steps" aria-label="회원가입 진행 단계">
+      {SIGNUP_STEPS.map((label, i) => (
+        <li key={label} className={i < current ? 'done' : i === current ? 'current' : ''} aria-current={i === current ? 'step' : undefined}>
+          <span className="signup-step-dot" aria-hidden="true">
+            {i < current ? <Check size={12} /> : i + 1}
+          </span>
+          <span className="signup-step-label">{label}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/**
+ * 회원가입 및 열람 요청 — ① 이메일 인증(인증번호) → ② 이름·소속·비밀번호 → ③ 관리자 승인 대기 (ad-insight SignupForm 과 같은 흐름).
+ * 인증되면 로그인 상태가 되지만 2단계를 마칠 때까지 접속 화면은 이 폼을 유지한다 (AuthContext.signupInProgress)
+ */
+function SignupForm() {
+  const { user, sendEmailCode, verifyEmailCode, completeSignup, signupInProgress, cancelSignup } = useAuth();
+  const [email, setEmail] = useState('');
+  const [sentTo, setSentTo] = useState('');
+  const [code, setCode] = useState('');
+  const [name, setName] = useState('');
+  const [team, setTeam] = useState('');
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
+  const [wait, setWait] = useResendWait();
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const err = !!error;
+  const step: 0 | 1 = signupInProgress ? 1 : 0;
+
+  const send = async () => {
+    setError('');
+    setBusy(true);
+    const res = await sendEmailCode(email, true);
+    setBusy(false);
+    if (res.error) return setError(res.error);
+    setSentTo(email.trim());
+    setCode('');
+    setWait(RESEND_SEC);
+  };
+  const verify = async (value: string) => {
+    setError('');
+    setBusy(true);
+    const res = await verifyEmailCode(sentTo, value);
+    setBusy(false);
+    if (res.error) setError(res.error);
+  };
+  const complete = async () => {
+    setError('');
+    if (password !== password2) return setError('비밀번호 확인이 일치하지 않습니다.');
+    setBusy(true);
+    const res = await completeSignup({ name, team, password });
+    setBusy(false);
+    if (res.error) setError(res.error);
+  };
+
+  return (
+    <>
+      <SignupSteps current={step} />
+      {step === 1 ? (
+        <form className="gate-form" onSubmit={(e) => { e.preventDefault(); void complete(); }}>
+          <p className="gate-code-sent">
+            <strong>{user?.email || sentTo}</strong> 인증이 끝났습니다. 열람 요청에 쓸 정보와 로그인 비밀번호를 정해 주세요.
+          </p>
+          <GateInput name="name" autoComplete="name" placeholder="이름" value={name} onChange={setName} err={err} autoFocus />
+          <GateInput name="team" autoComplete="organization" placeholder="소속 (회사·팀)" value={team} onChange={setTeam} err={err} />
+          <GateInput type="password" name="new-password" autoComplete="new-password" placeholder="비밀번호 (6자 이상)" value={password} onChange={setPassword} err={err} />
+          <GateInput type="password" name="new-password2" autoComplete="new-password" placeholder="비밀번호 확인" value={password2} onChange={setPassword2} err={err} />
+          {error && <GateError message={error} />}
+          <GateSubmit busy={busy} busyText="보내는 중...">회원가입 및 열람 요청</GateSubmit>
+          <button type="button" className="gate-link" onClick={() => void cancelSignup()}>
+            처음부터 다시 하기
+          </button>
+        </form>
+      ) : (
+        <form className="gate-form" onSubmit={(e) => { e.preventDefault(); if (sentTo) void verify(code); else void send(); }}>
+          {sentTo ? (
+            <CodeStep
+              sentTo={sentTo}
+              code={code}
+              err={err}
+              wait={wait}
+              busy={busy}
+              onCode={(v) => {
+                setCode(v);
+                // 6자리를 다 넣으면(붙여넣기 포함) 버튼을 누르지 않아도 바로 확인한다
+                if (v.length === 6 && !busy) void verify(v);
+              }}
+              onResend={() => void send()}
+              onChangeEmail={() => { setSentTo(''); setError(''); }}
+            />
+          ) : (
+            <GateInput type="email" name="email" autoComplete="email" placeholder="이메일" value={email} onChange={setEmail} err={err} autoFocus />
+          )}
+          {error && <GateError message={error} />}
+          <GateSubmit busy={busy} busyText={sentTo ? '확인 중...' : '보내는 중...'}>{sentTo ? '인증하고 다음 단계로' : '이메일 인증번호 받기'}</GateSubmit>
+        </form>
+      )}
+    </>
+  );
+}
+
+/**
+ * 비밀번호 찾기 — 가입된 이메일로 받은 인증번호와 새 비밀번호로 바꾸고 로그인한다 (ad-insight EmailCodeForm 과 같은 흐름).
+ * 로그인은 비밀번호로 하고, 인증번호는 메일 주인 확인에만 쓴다 (2026-11-18 사용자 결정)
+ */
+function EmailCodeForm({ initialEmail = '', onDone }: { mode: 'reset'; initialEmail?: string; onDone?: (email: string) => void }) {
+  const { sendEmailCode, resetPasswordWithCode } = useAuth();
+  const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
+  const [code, setCode] = useState('');
+  const [sentTo, setSentTo] = useState('');
+  const [wait, setWait] = useResendWait();
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const err = !!error;
+
+  const send = async () => {
+    setError('');
+    setBusy(true);
+    const res = await sendEmailCode(email);
+    setBusy(false);
+    if (res.error) return setError(res.error);
+    setSentTo(email.trim());
+    setCode('');
+    setWait(RESEND_SEC);
+  };
+  const verify = async () => {
+    setError('');
+    if (password !== password2) return setError('새 비밀번호 확인이 일치하지 않습니다.');
+    setBusy(true);
+    const res = await resetPasswordWithCode(sentTo, code, password);
+    setBusy(false);
+    if (res.error) setError(res.error);
+    else onDone?.(sentTo);
+  };
+
+  if (!sentTo) {
+    return (
+      <form className="gate-form" onSubmit={(e) => { e.preventDefault(); void send(); }}>
+        <GateInput type="email" name="email" autoComplete="email" placeholder="이메일" value={email} onChange={setEmail} err={err} autoFocus />
+        {error && <GateError message={error} />}
+        <GateSubmit busy={busy} busyText="보내는 중...">인증번호 받기</GateSubmit>
+      </form>
+    );
+  }
+  return (
+    <form className="gate-form" onSubmit={(e) => { e.preventDefault(); void verify(); }}>
+      <CodeStep sentTo={sentTo} code={code} err={err} wait={wait} busy={busy} onCode={setCode} onResend={() => void send()} onChangeEmail={() => { setSentTo(''); setError(''); }} />
+      <GateInput type="password" name="new-password" autoComplete="new-password" placeholder="새 비밀번호 (6자 이상)" value={password} onChange={setPassword} err={err} />
+      <GateInput type="password" name="new-password2" autoComplete="new-password" placeholder="새 비밀번호 확인" value={password2} onChange={setPassword2} err={err} />
+      {error && <GateError message={error} />}
+      <GateSubmit busy={busy} busyText="확인 중...">비밀번호 바꾸고 로그인</GateSubmit>
     </form>
   );
 }
@@ -259,14 +362,17 @@ function GateActions({ recheck }: { recheck?: boolean }) {
  * 계정·승인은 ad-insight 와 공유한다 (2026-11-18 사용자 결정). 가입 요청 승인은 ad-insight 관리자 화면에서 한다.
  */
 export function AccessGate({ children }: { children: ReactNode }) {
-  const { loading, user, role, canView, refreshRole } = useAuth();
+  const { loading, user, role, canView, refreshRole, signupInProgress } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
 
   // 권한을 다시 확인하는 동안에도 이미 보고 있던 화면은 그대로 둔다
   if (canView) return <>{children}</>;
 
+  // 회원가입 도중(이메일 인증은 됐고 정보 입력 전) — 로그인 상태가 됐어도 승인 요청 화면으로 넘기지 않고 가입 폼을 그대로 둔다
+  const signingUp = signupInProgress && !canView;
+
   // 권한 확인 중 — 잠금 카드 대신 대시보드 모양 로딩 (ad-insight 접속 화면과 같은 방식)
-  if (loading) {
+  if (loading && !signingUp) {
     return (
       <div className="site-loading access-loading">
         <div className="access-loading-bar" aria-hidden="true" />
@@ -279,21 +385,23 @@ export function AccessGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!user) {
-    const login = mode === 'login';
+  if (!user || signingUp) {
+    const login = mode === 'login' && !signingUp;
     return (
       <GateCard
         icon={<Lock size={20} aria-hidden="true" />}
         title={login ? GATE_TITLE : '회원가입 및 열람 요청'}
-        desc={login ? '승인된 계정만 볼 수 있습니다. 광고 인사이트와 같은 계정으로 로그인합니다.' : '이메일 인증번호로 가입과 함께 관리자에게 열람 승인을 요청합니다. 승인되면 광고 인사이트와 함께 볼 수 있습니다.'}
+        desc={login ? '승인된 계정만 볼 수 있습니다. 광고 인사이트와 같은 계정으로 로그인합니다.' : '이메일 인증 → 정보 입력 → 관리자 승인 순서로 진행합니다. 승인되면 광고 인사이트와 함께 볼 수 있습니다.'}
       >
-        {login ? <LoginForm /> : <EmailCodeForm key="signup" mode="signup" />}
-        <p className="gate-switch">
-          {login ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'}{' '}
-          <button type="button" className="gate-link" onClick={() => setMode(login ? 'signup' : 'login')}>
-            {login ? '회원가입' : '로그인'}
-          </button>
-        </p>
+        {login ? <LoginForm /> : <SignupForm />}
+        {!signingUp && (
+          <p className="gate-switch">
+            {login ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'}{' '}
+            <button type="button" className="gate-link" onClick={() => setMode(login ? 'signup' : 'login')}>
+              {login ? '회원가입' : '로그인'}
+            </button>
+          </p>
+        )}
       </GateCard>
     );
   }
@@ -301,6 +409,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
   if (role === 'pending') {
     return (
       <GateCard icon={<Clock size={20} aria-hidden="true" />} title="승인을 기다리고 있습니다" desc="관리자가 가입 요청을 확인하고 있습니다. 승인되면 바로 볼 수 있습니다.">
+        <SignupSteps current={2} />
         <GateActions recheck />
       </GateCard>
     );

@@ -11,13 +11,16 @@ export interface AuthUser {
   team?: string;
 }
 
-/** 회원가입 및 열람 요청 때 함께 적는 값 */
+/** 회원가입 2단계(정보 입력)에서 받는 값 — 이메일 인증을 마친 뒤 계정에 정한다 */
 export interface SignUpInfo {
   name: string;
   team: string;
-  /** 로그인에 쓸 비밀번호 — 메일 인증 직후 계정에 정한다 */
+  /** 로그인에 쓸 비밀번호 */
   password: string;
 }
+
+/** 회원가입 2단계 진행 중 표시 (sessionStorage, ad-insight 와 같은 키) */
+const SIGNUP_STEP_KEY = 'adi_signup_step';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -27,10 +30,16 @@ interface AuthContextType {
   role: AccessRole | null;
   /** 데이터를 볼 수 있는지 (관리자·승인된 계정) */
   canView: boolean;
-  /** 이메일로 6자리 인증번호를 보낸다 — signup 을 주면 처음 쓰는 이메일도 계정을 만든다(회원가입), 없으면 가입된 이메일만 */
-  sendEmailCode: (email: string, signup?: SignUpInfo) => Promise<{ error?: string }>;
-  /** 인증번호를 확인한다 — signup 이면 비밀번호를 정하고 관리자에게 열람 승인을 요청한다 */
-  verifyEmailCode: (email: string, code: string, signup?: SignUpInfo) => Promise<{ error?: string }>;
+  /** 이메일로 6자리 인증번호를 보낸다 — signup 이면 처음 쓰는 이메일도 계정을 만든다(회원가입 1단계), 아니면 가입된 이메일만(비밀번호 찾기) */
+  sendEmailCode: (email: string, signup?: boolean) => Promise<{ error?: string }>;
+  /** 회원가입 1단계 — 인증번호를 확인한다. 확인되면 로그인된 채로 2단계(정보 입력)로 넘어간다 (signupInProgress) */
+  verifyEmailCode: (email: string, code: string) => Promise<{ error?: string }>;
+  /** 회원가입 2단계 — 이름·소속·비밀번호를 정하고 관리자에게 열람 승인을 요청한다 */
+  completeSignup: (info: SignUpInfo) => Promise<{ error?: string }>;
+  /** 회원가입 도중(인증은 됐고 정보 입력 전) — 접속 화면이 승인 요청 화면으로 넘어가지 않고 가입 폼을 유지한다 */
+  signupInProgress: boolean;
+  /** 회원가입을 그만둔다 (인증으로 로그인된 상태도 정리) */
+  cancelSignup: () => Promise<void>;
   /** 비밀번호 찾기 — 메일 인증번호를 확인한 뒤 새 비밀번호로 바꾸고 로그인한다 */
   resetPasswordWithCode: (email: string, code: string, newPassword: string) => Promise<{ error?: string }>;
   /** 이메일(gmail 은 아이디만)·비밀번호로 로그인한다 */
@@ -107,6 +116,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AccessRole | null>(null);
   const [roleLoading, setRoleLoading] = useState(true);
   const [roleTick, setRoleTick] = useState(0);
+  // 회원가입 도중 표시 — 2단계(정보 입력)에서 새로 고침해도 이어서 하도록 이 탭(sessionStorage)에 남긴다
+  const [signupInProgress, setSignupInProgressState] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem(SIGNUP_STEP_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const setSignupInProgress = useCallback((on: boolean) => {
+    setSignupInProgressState(on);
+    try {
+      if (on) sessionStorage.setItem(SIGNUP_STEP_KEY, '1');
+      else sessionStorage.removeItem(SIGNUP_STEP_KEY);
+    } catch {
+      // 저장하지 못하면 새로 고침 때 승인 요청 화면으로 간다
+    }
+  }, []);
   const refreshRole = useCallback(() => setRoleTick((n) => n + 1), []);
 
   useEffect(() => {
@@ -117,7 +143,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setSessionLoading(false));
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // 로그아웃·세션 만료면 남은 가입 도중 표시를 지운다 (비로그인에게 2단계 폼이 보이지 않게)
+      if (event === 'SIGNED_OUT') setSignupInProgress(false);
       setUser(session?.user ? toAuthUser(session.user) : null);
       setSessionLoading(false);
     });
@@ -126,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
       window.removeEventListener(ACCESS_CHANGED_EVENT, refreshRole);
     };
-  }, [refreshRole]);
+  }, [refreshRole, setSignupInProgress]);
 
   // 계정이 바뀌거나 다시 확인을 요청하면 열람 권한을 묻는다 (토큰 갱신처럼 계정이 그대로면 묻지 않는다)
   const userId = user?.id || '';
@@ -161,18 +189,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [sessionLoading, userId, roleTick]);
 
-  const sendEmailCode = async (email: string, signup?: SignUpInfo): Promise<{ error?: string }> => {
+  const sendEmailCode = async (email: string, signup = false): Promise<{ error?: string }> => {
     const mail = toLoginEmail(email);
     if (!isEmail(mail)) return { error: '이메일 주소를 확인해 주세요.' };
-    if (signup && (!signup.name.trim() || !signup.team.trim())) return { error: '이름과 소속을 입력해 주세요.' };
-    if (signup && signup.password.length < 6) return { error: '비밀번호는 6자 이상으로 정해 주세요.' };
     const { error } = await supabase.auth.signInWithOtp({
       email: mail,
-      options: {
-        shouldCreateUser: !!signup,
-        data: signup ? { name: signup.name.trim(), team: signup.team.trim() } : undefined,
-        emailRedirectTo: window.location.origin + import.meta.env.BASE_URL,
-      },
+      options: { shouldCreateUser: signup, emailRedirectTo: window.location.origin + import.meta.env.BASE_URL },
     });
     return error ? { error: codeErrorText(error.message) } : {};
   };
@@ -188,22 +210,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {};
   };
 
-  const verifyEmailCode = async (email: string, code: string, signup?: SignUpInfo): Promise<{ error?: string }> => {
+  const verifyEmailCode = async (email: string, code: string): Promise<{ error?: string }> => {
     const token = code.replace(/\D/g, '');
     if (token.length < 6) return { error: '메일로 받은 6자리 인증번호를 입력해 주세요.' };
+    // 인증되면 곧바로 로그인 상태가 되므로, 그 전에 '가입 도중'으로 표시해 접속 화면이 가입 폼을 그대로 두게 한다
+    setSignupInProgress(true);
     const { data, error } = await supabase.auth.verifyOtp({ email: toLoginEmail(email), token, type: 'email' });
-    if (error || !data.session) return { error: codeErrorText(error?.message || 'invalid') };
-    if (!signup) return {};
-    // 인증으로 로그인된 세션에서 비밀번호를 정한다 — 다음부터 비밀번호로 로그인한다
-    const pw = await supabase.auth.updateUser({ password: signup.password });
+    if (error || !data.session) {
+      setSignupInProgress(false);
+      return { error: codeErrorText(error?.message || 'invalid') };
+    }
+    return {};
+  };
+
+  const completeSignup = async ({ name, team, password }: SignUpInfo): Promise<{ error?: string }> => {
+    if (!name.trim() || !team.trim()) return { error: '이름과 소속을 입력해 주세요.' };
+    if (password.length < 6) return { error: '비밀번호는 6자 이상으로 정해 주세요.' };
+    // 인증으로 로그인된 세션에 비밀번호·이름·소속을 정한다 — 다음부터 비밀번호로 로그인한다
+    const pw = await supabase.auth.updateUser({ password, data: { name: name.trim(), team: team.trim() } });
     if (pw.error) {
       console.error('Set password error:', pw.error.message);
       return { error: passwordErrorText(pw.error.message) };
     }
-    const req = await postAccessRequest(signup.name.trim(), signup.team.trim(), data.session.access_token).catch(() => ({ error: 'network' }));
-    if (req.error) return { error: req.error === 'too_many' ? requestErrorText(req.error) : '로그인은 됐지만 열람 요청을 보내지 못했습니다. 잠시 뒤 다시 요청해 주세요.' };
+    const req = await postAccessRequest(name.trim(), team.trim()).catch(() => ({ error: 'network' }));
+    if (req.error) return { error: req.error === 'too_many' ? requestErrorText(req.error) : '열람 요청을 보내지 못했습니다. 잠시 뒤 다시 시도해 주세요.' };
+    setSignupInProgress(false);
     refreshRole();
     return {};
+  };
+
+  const cancelSignup = async () => {
+    setSignupInProgress(false);
+    await supabase.auth.signOut();
   };
 
   const resetPasswordWithCode = async (email: string, code: string, newPassword: string): Promise<{ error?: string }> => {
@@ -232,6 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    setSignupInProgress(false);
     writeRoleCache('', null);
     await supabase.auth.signOut();
     setUser(null);
@@ -246,6 +285,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         canView: canViewRole(role),
         sendEmailCode,
         verifyEmailCode,
+        completeSignup,
+        signupInProgress: signupInProgress && !!user,
+        cancelSignup,
         resetPasswordWithCode,
         loginWithPassword,
         requestAccess,
