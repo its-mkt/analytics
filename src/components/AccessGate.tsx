@@ -101,7 +101,7 @@ function SignUpForm({ onSent }: { onSent: (needsEmailConfirm: boolean) => void }
       <GateInput type="password" name="new-password" autoComplete="new-password" placeholder="비밀번호 (6자 이상)" value={password} onChange={setPassword} err={err} />
       <GateInput type="password" name="new-password2" autoComplete="new-password" placeholder="비밀번호 확인" value={password2} onChange={setPassword2} err={err} />
       {error && <GateError message={error} />}
-      <GateSubmit busy={busy} busyText="보내는 중...">회원가입</GateSubmit>
+      <GateSubmit busy={busy} busyText="보내는 중...">회원가입 및 열람 요청</GateSubmit>
     </form>
   );
 }
@@ -168,7 +168,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
       return (
         <GateCard
           icon={<Clock size={20} aria-hidden="true" />}
-          title="회원가입 요청을 보냈습니다"
+          title="회원가입 및 열람 요청을 보냈습니다"
           desc={sent.confirm ? '받은 메일의 인증 링크를 누른 뒤 로그인해 주세요. 관리자가 승인하면 데이터를 볼 수 있습니다.' : '관리자가 승인하면 로그인해서 데이터를 볼 수 있습니다.'}
         >
           <Button variant="primary" className="btn-gate" onClick={() => { setSent(null); setMode('login'); }}>
@@ -181,8 +181,8 @@ export function AccessGate({ children }: { children: ReactNode }) {
     return (
       <GateCard
         icon={<Lock size={20} aria-hidden="true" />}
-        title={login ? GATE_TITLE : '회원가입'}
-        desc={login ? '승인된 계정만 볼 수 있습니다. 광고 인사이트 계정으로 로그인하세요.' : '가입하면 관리자에게 승인 요청이 갑니다. 승인되면 광고 인사이트와 함께 볼 수 있습니다.'}
+        title={login ? GATE_TITLE : '회원가입 및 열람 요청'}
+        desc={login ? '승인된 계정만 볼 수 있습니다. 광고 인사이트 계정으로 로그인하세요.' : '가입과 함께 관리자에게 열람 승인을 요청합니다. 승인되면 광고 인사이트와 함께 볼 수 있습니다.'}
       >
         {login ? <LoginForm /> : <SignUpForm onSent={(confirm) => setSent({ confirm })} />}
         <p className="gate-switch">
