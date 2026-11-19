@@ -73,6 +73,7 @@ export function loadDashboardPayload(mode = process.env.NODE_ENV || 'development
       names: readJson(path.join(dataDir, 'names.json'), {}),
       title: cfg.title as string,
       siteUrl: cfg.siteUrl as string,
+      startMonth: (cfg.startMonth as string) || '',
       internal: cfg.internalFilter || { state: 'pending', since: null },
       liveUrl,
       oncore,

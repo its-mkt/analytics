@@ -189,7 +189,7 @@ export interface DashboardPayload {
   meta: MetaInfo;
   months: Record<string, MonthData>;
   liveUrl: string;
-  /** 이 달부터 화면에 보인다 (온코어: 설정의 oncore.startMonth) */
+  /** 수집 시작 달 (config startMonth · 온코어는 oncore.startMonth) — 온코어는 이 달부터 화면에 보이고, 로딩 중 기간 줄의 고를 수 있는 처음 달로 쓴다 */
   startMonth?: string;
   /** 온코어 데이터 — 아이티켓 페이로드에만 붙는다 (형식은 같음) */
   oncore?: DashboardPayload;

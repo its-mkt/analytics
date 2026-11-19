@@ -15,7 +15,6 @@ import { baseData, loadSitePayload, useDashboardData } from './hooks/useDashboar
 import { Button } from './components/Button';
 import { MonthViewSkeleton } from './components/DashboardSkeleton';
 import { PageAnalysisSkeleton } from './components/PageAnalysisSkeleton';
-import { Skeleton } from './components/Skeleton';
 import { useRoute } from './hooks/useRoute';
 import { useTheme } from './hooks/useTheme';
 import type { ConvByKey, DashboardPayload, MetricKey, ShopTabKey, SiteId, ViewTab } from './types/analytics';
@@ -77,6 +76,14 @@ function LoadingShell({ site, error, onRetry, onSiteChange }: { site: SiteId; er
   const isYear = route.tab !== 'page' && /^d{4}$/.test(route.m);
   const title = isYear ? YEAR_TITLE : VIEW_TITLES[route.tab];
   const desc = isYear ? yearDesc(route.m) : VIEW_DESC[route.tab];
+  const maxMonth = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 7); // 이번 달 (한국 시간)
+  const minMonth = baseData(site).startMonth || '2025-01';
+  const years = Array.from({ length: +maxMonth.slice(0, 4) - +minMonth.slice(0, 4) + 1 }, (_, i) => String(+minMonth.slice(0, 4) + i));
+  const period = route.tab === 'page' ? (/^d{4}-d{2}$/.test(route.m) ? route.m : maxMonth) : route.m || maxMonth;
+  const pickPeriod = (m: string) => {
+    history.pushState(null, '', routePath({ ...route, m: m === maxMonth ? '' : m }));
+    rerender((n) => n + 1);
+  };
   const go = (tab: ViewTab) => {
     history.pushState(null, '', routePath({ ...route, tab, q: '', m: '' }));
     setDrawerOpen(false);
@@ -101,13 +108,8 @@ function LoadingShell({ site, error, onRetry, onSiteChange }: { site: SiteId; er
       />
       <div className="wrap">
         <Header title={title} drawerOpen={drawerOpen} isDark={isDark} onOpenDrawer={() => setDrawerOpen(true)} onToggleTheme={toggleTheme} onSearch={() => {}} />
-        {/* 기간 줄 자리 — 데이터가 오면 실제 기간 줄이 같은 높이로 들어와 본문이 밀리지 않는다 */}
-        <div className="period-nav-bar" aria-hidden="true">
-          <div className="period-nav-left">
-            <Skeleton width="13rem" height="var(--h-32)" pill />
-            <Skeleton width="18rem" height="0.75rem" />
-          </div>
-        </div>
+        {/* 기간 줄은 데이터가 없어도 고를 수 있다 (수집 시작 달 ~ 이번 달). 집계 기준 안내만 데이터가 온 뒤에 붙는다 */}
+        <PeriodNav years={years} selectedPeriod={period} minAvailableMonth={minMonth} maxAvailableMonth={maxMonth} onSelectPeriod={pickPeriod} />
         <div className="cont" aria-busy={!error}>
           <PageHeader id="pageHeader" title={title} desc={desc} />
           <LivePanel liveUrl={baseData(site).liveUrl} />
