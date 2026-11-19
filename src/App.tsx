@@ -293,6 +293,7 @@ function Dashboard({ site, initial, onSiteChange }: { site: SiteId; initial: Das
               />
             ) : (
               <MonthView
+                site={site}
                 siteUrl={data.siteUrl}
                 monthKey={sel}
                 months={data.months}
@@ -309,6 +310,10 @@ function Dashboard({ site, initial, onSiteChange }: { site: SiteId; initial: Das
                 onChangeShopTab={setShopTab}
                 onChangeConvBy={setConvBy}
                 onOpenPage={(q) => handleOpenDrawerPage(q)}
+                onOpenTab={(tab) => {
+                  selectTab(tab);
+                  setDrawerOpen(false);
+                }}
               />
             )}
           </main>

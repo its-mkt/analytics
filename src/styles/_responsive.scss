@@ -247,7 +247,7 @@
     }
 
     &:hover:not(:disabled):not(.on) {
-      background: var(--card);
+      background: var(--hover);
     }
 
     &.all {

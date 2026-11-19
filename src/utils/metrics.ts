@@ -63,9 +63,6 @@ export const prevKey = (k: string): string => {
   return mo === 1 ? `${y - 1}-12` : `${y}-${String(mo - 1).padStart(2, '0')}`;
 };
 
-export const yoyKey = (k: string): string =>
-  `${+k.slice(0, 4) - 1}-${k.slice(5)}`;
-
 // 방문 기록이 사실상 없는 달(세션 100 미만, 진행 중인 달 제외) — 비교·합산에서 제외한다
 export const isGap = (m?: MonthData): boolean =>
   !!m && !m.partial && m.total.sessions < 100;

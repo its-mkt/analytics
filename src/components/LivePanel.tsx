@@ -100,7 +100,12 @@ export function LivePanel({ liveUrl }: LivePanelProps) {
         <LiveNotice title="실시간" msg="연결 대기 중…" />
       );
     }
-    return <LivePanelSkeleton />;
+    return (
+      <LivePanelSkeleton
+        collapsed={collapsed}
+        toggle={<LiveToggle open={false} onClick={toggleCollapsed} />}
+      />
+    );
   }
 
   const dev = (live.devices || [])

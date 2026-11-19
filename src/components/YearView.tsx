@@ -8,8 +8,7 @@ import { fmt } from '../utils/format';
 import { metricOf, METRICS, okM, tracksEstimate } from '../utils/metrics';
 import { MonthlyChart } from './BarChart';
 import { Card } from './Card';
-import { DeltaBadge } from './DeltaBadge';
-import { KpiCardsGrid } from './KpiCardsGrid';
+import { KpiCardsGrid, type KpiItem } from './KpiCardsGrid';
 import { SegmentedControl } from './SegmentedControl';
 import { YearSummaryTable } from './YearSummaryTable';
 import { SourceNotice, storeSource, type SourceLinkItem } from './SourceNotice';
@@ -31,14 +30,6 @@ interface YearViewProps {
   onChangeAnnMetric: (m: MetricKey) => void;
   onSelectMonth: (monthKey: string) => void;
 }
-
-const ANNUAL_KPI_DEFS: Array<[string, MetricKey]> = [
-  ['방문자', 'activeUsers'],
-  ['신규 방문자', 'newUsers'],
-  ['세션', 'sessions'],
-  ['페이지뷰', 'screenPageViews'],
-  ['회원가입', 'signups'],
-];
 
 export function YearView({
   siteUrl,
@@ -75,73 +66,71 @@ export function YearView({
     return pyMonths.reduce((a, k) => a + val(k, key), 0);
   };
 
-  const kpiItems = ANNUAL_KPI_DEFS.map(([label, key]) => {
-    const isSignup = key === 'signups';
-    const hasGodoSign = ks.some((k) => godoSignups?.monthly?.[k] != null);
-    const godoSignSum = ks.reduce(
-      (a, k) => a + (godoSignups?.monthly?.[k] ?? (months[k] ? metricOf(months[k], 'signups') : 0)),
-      0,
-    );
-    const prevGodoSignSum = hasPyData
-      ? pyMonths.reduce(
-          (a, k) => a + (godoSignups?.monthly?.[k] ?? (months[k] ? metricOf(months[k], 'signups') : 0)),
-          0,
-        )
-      : null;
+  // 연간 KPI 4장 — 월 화면과 같은 규칙(ad-insight KpiCard): 이름에 기간, 단위, 비교 하나(전년 동기간), 아래 줄
+  const period = `${year}년`;
+  const name = (label: string) => `${period} ${label}${isFullYear ? '' : ' (누계)'}`;
+  const hasGodoSign = ks.some((k) => godoSignups?.monthly?.[k] != null);
+  const signOf = (list: string[]) =>
+    list.reduce((a, k) => a + (godoSignups?.monthly?.[k] ?? (months[k] ? metricOf(months[k], 'signups') : 0)), 0);
+  const signTotal = hasGodoSign ? signOf(ks) : sum('signups');
+  const prevSignTotal = hasPyData ? (hasGodoSign ? signOf(pyMonths) : psum('signups')) : null;
+  const quoteOf = (list: string[]) =>
+    list.reduce((a, k) => {
+      if (godoQuotes && godoQuotes.monthly[k] != null) return a + godoQuotes.monthly[k];
+      return a + (okM(months, k)?.conv?.total?.estimate?.sessions || 0);
+    }, 0);
+  const visitors = sum('activeUsers');
+  const views = sum('screenPageViews');
+  const sessions = sum('sessions');
+  const metric = (key: MetricKey) => ({ cur: sum(key), prev: psum(key), cmpLabel: prevLabel });
 
-    const total = isSignup && hasGodoSign ? godoSignSum : sum(key);
-    const prevVal = isSignup && hasGodoSign ? prevGodoSignSum : psum(key);
-
-    let tooltip: string | undefined = undefined;
-    if (key === 'activeUsers') {
-      tooltip = `${year}년 일별 방문자 합산 (고도몰 통계와 동일한 방식)`;
-    } else if (isSignup && hasGodoSign) {
-      tooltip = `${year}년 고도몰 DB 실가입자 수 합산`;
-    }
-
-    return {
-      label: `${label}${isSignup && hasGodoSign ? ' (실가입)' : ''} (${year}년${isFullYear ? '' : ' 누계'})`,
-      value: total,
-      badge:
-        prevVal != null ? (
-          <DeltaBadge cur={total} prev={prevVal} label={prevLabel} />
-        ) : null,
-      sub: (
-        <div className="label sub1 sub-top" title={tooltip}>
-          {prevVal != null ? `${prevLabel} ${fmt(prevVal)}` : `${prevLabel} ―`}
-        </div>
-      ),
-    };
-  });
-
-  // 6번째 핵심 KPI: 견적요청 (고도몰 DB 실접수)
-  const quoteTotal = ks.reduce((a, k) => {
-    if (godoQuotes && godoQuotes.monthly[k] != null) return a + godoQuotes.monthly[k];
-    const m = okM(months, k);
-    return a + (m?.conv?.total?.estimate?.sessions || 0);
-  }, 0);
-  const pyQuoteTotal = hasPyData
-    ? pyMonths.reduce((a, k) => {
-        if (godoQuotes && godoQuotes.monthly[k] != null) return a + godoQuotes.monthly[k];
-        const m = okM(months, k);
-        return a + (m?.conv?.total?.estimate?.sessions || 0);
-      }, 0)
-    : null;
-
-  // 견적을 세지 않는 사이트(온코어)는 견적 카드를 두지 않는다
-  if (tracksEstimate(ks.map((k) => months[k]))) kpiItems.push({
-    label: `견적요청 (실접수) (${year}년${isFullYear ? '' : ' 누계'})`,
-    value: quoteTotal,
-    badge:
-      pyQuoteTotal != null ? (
-        <DeltaBadge cur={quoteTotal} prev={pyQuoteTotal} label={prevLabel} />
-      ) : null,
-    sub: (
-      <div className="label sub1 sub-top" title="고도몰 DB 견적 실접수 건수 기준">
-        고도몰 DB 실건수{pyQuoteTotal != null ? ` (${prevLabel} ${fmt(pyQuoteTotal)})` : ''}
-      </div>
-    ),
-  });
+  const kpiItems: KpiItem[] = [
+    // 1. 대표 전환 — 견적을 세는 사이트(아이티켓)는 견적 요청(아래 줄 회원가입), 아니면(온코어) 회원가입
+    tracksEstimate(ks.map((k) => months[k]))
+      ? {
+          label: name('견적 요청'),
+          value: quoteOf(ks),
+          unit: '건',
+          cur: quoteOf(ks),
+          prev: hasPyData ? quoteOf(pyMonths) : null,
+          cmpLabel: prevLabel,
+          detail: [['회원가입', `${fmt(signTotal)}건`]],
+          title: '고도몰 DB 견적 실접수 건수 기준',
+        }
+      : {
+          label: name('회원가입'),
+          value: signTotal,
+          unit: '건',
+          cur: signTotal,
+          prev: prevSignTotal,
+          cmpLabel: prevLabel,
+          // 월 화면 온코어 카드와 같이 아래 줄에 주문(GA4 주문 완료 화면 세션)
+          detail: [['주문', `${fmt(ks.reduce((n, k) => n + (okM(months, k)?.conv?.total?.order?.sessions || 0), 0))}건`]],
+          title: hasGodoSign ? '고도몰 DB 실가입자 수 합산' : 'GA4 가입 완료 화면 기준',
+        },
+    {
+      label: name('방문자'),
+      value: visitors,
+      unit: '명',
+      ...metric('activeUsers'),
+      detail: [['신규', `${fmt(sum('newUsers'))}명`]],
+      title: `${year}년 일별 방문자 합산 (고도몰 통계와 같은 방식)`,
+    },
+    {
+      label: name('세션'),
+      value: sessions,
+      unit: '회',
+      ...metric('sessions'),
+      detail: [['월평균', validMonths.length ? `${fmt(Math.round(sessions / validMonths.length))}회` : '―']],
+    },
+    {
+      label: name('페이지뷰'),
+      value: views,
+      unit: '회',
+      ...metric('screenPageViews'),
+      detail: [['방문자당', visitors ? `${(views / visitors).toFixed(1)}회` : '―']],
+    },
+  ];
 
   return (
     <>

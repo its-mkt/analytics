@@ -7,8 +7,10 @@ import type {
   MonthData,
   NamesMap,
   ShopTabKey,
+  SiteId,
+  ViewTab,
 } from '../types/analytics';
-import { k2v, lateStartDay, METRICS, okCmp, prevKey, suspOf, tracksEstimate, yoyKey } from '../utils/metrics';
+import { k2v, lateStartDay, METRICS, okCmp, prevKey, suspOf, tracksEstimate } from '../utils/metrics';
 import { DailyChart } from './BarChart';
 import { Card } from './Card';
 import { ConversionSection } from './ConversionSection';
@@ -30,6 +32,8 @@ const monthSources = (siteUrl: string): SourceLinkItem[] => [
 ];
 
 interface MonthViewProps {
+  /** 보고 있는 사이트 (KPI 카드 링크 주소) */
+  site: SiteId;
   /** 보고 있는 사이트의 쇼핑몰 주소 (출처 줄) */
   siteUrl: string;
   monthKey: string;
@@ -47,9 +51,12 @@ interface MonthViewProps {
   onChangeShopTab: (tab: ShopTabKey) => void;
   onChangeConvBy: (by: ConvByKey) => void;
   onOpenPage: (query: string) => void;
+  /** KPI 카드를 누르면 열 화면 */
+  onOpenTab: (tab: ViewTab) => void;
 }
 
 export function MonthView({
+  site,
   siteUrl,
   monthKey,
   months,
@@ -66,6 +73,7 @@ export function MonthView({
   onChangeShopTab,
   onChangeConvBy,
   onOpenPage,
+  onOpenTab,
 }: MonthViewProps) {
   const m = months[monthKey];
   if (!m) {
@@ -77,7 +85,6 @@ export function MonthView({
   const prevK = prevKey(monthKey);
   const prevStartDay = lateStartDay(months, prevK);
   const prev = startDay ? undefined : okCmp(months, prevK);
-  const yoy = startDay ? undefined : okCmp(months, yoyKey(monthKey));
 
   const series = m.daily.map((r) => k2v(r, m));
   const sp = suspOf(m);
@@ -107,14 +114,14 @@ export function MonthView({
       {currentTab === 'overview' && (
         <>
           <MonthKpiCards
+            site={site}
             monthData={m}
             prevMonthData={prev}
-            yoyMonthData={yoy}
             suspExcess={sp.excess}
             godoQuotes={godoQuotes}
             godoQuotesLoading={godoQuotesLoading}
             prevKey={prevK}
-            yoyKey={yoyKey(monthKey)}
+            onOpenTab={onOpenTab}
           />
 
           <Card
