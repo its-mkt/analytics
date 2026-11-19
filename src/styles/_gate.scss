@@ -251,7 +251,8 @@
       width: 2.5rem;
       height: 2.5rem;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.16);
+      // ad-insight 접속 화면처럼 바탕 없이 흰 아이콘만
+      color: #fff;
     }
 
     .gate-brand-name {
