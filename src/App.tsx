@@ -11,13 +11,14 @@ import { PeriodNav } from './components/PeriodNav';
 import { SearchDialog } from './components/SearchDialog';
 import { Sidebar } from './components/Sidebar';
 import { YearView } from './components/YearView';
-import { loadSitePayload, useDashboardData } from './hooks/useDashboardData';
+import { baseData, loadSitePayload, useDashboardData } from './hooks/useDashboardData';
 import { Button } from './components/Button';
 import { MonthViewSkeleton } from './components/DashboardSkeleton';
 import { PageAnalysisSkeleton } from './components/PageAnalysisSkeleton';
+import { Skeleton } from './components/Skeleton';
 import { useRoute } from './hooks/useRoute';
 import { useTheme } from './hooks/useTheme';
-import type { ConvByKey, DashboardPayload, MetricKey, ShopTabKey, SiteId } from './types/analytics';
+import type { ConvByKey, DashboardPayload, MetricKey, ShopTabKey, SiteId, ViewTab } from './types/analytics';
 import type { SearchAction } from './utils/search';
 import { parseRoute, routePath } from './utils/route';
 import { VIEW_DESC, VIEW_TITLES, YEAR_TITLE, yearDesc } from './utils/views';
@@ -61,21 +62,71 @@ function SiteLoader({ site, onSiteChange }: { site: SiteId; onSiteChange: (site:
   }, [site, tick]);
 
   if (state.data) return <Dashboard site={site} initial={state.data} onSiteChange={onSiteChange} />;
-  const tab = parseRoute().tab;
+  return <LoadingShell site={site} error={!!state.error} onRetry={() => setTick((n) => n + 1)} onSiteChange={onSiteChange} />;
+}
+
+/**
+ * 데이터를 받는 동안의 화면 — ad-insight 처럼 사이드바·헤더·화면 머리말은 그대로 그리고 본문만 로딩 틀로 둔다.
+ * 사이드바 메뉴를 누르면 주소만 바꿔 그 화면 모양의 로딩 틀로 바꾼다 (데이터가 오면 그 화면으로 열린다).
+ */
+function LoadingShell({ site, error, onRetry, onSiteChange }: { site: SiteId; error: boolean; onRetry: () => void; onSiteChange: (site: SiteId) => void }) {
+  const { isDark, toggleTheme } = useTheme();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [, rerender] = useState(0);
+  const route = parseRoute();
+  const isYear = route.tab !== 'page' && /^d{4}$/.test(route.m);
+  const title = isYear ? YEAR_TITLE : VIEW_TITLES[route.tab];
+  const desc = isYear ? yearDesc(route.m) : VIEW_DESC[route.tab];
+  const go = (tab: ViewTab) => {
+    history.pushState(null, '', routePath({ ...route, tab, q: '', m: '' }));
+    setDrawerOpen(false);
+    rerender((n) => n + 1);
+  };
+
   return (
-    <div className="site-loading">
-      {state.error ? (
-        <EmptyState>
-          데이터를 불러오지 못했습니다.{' '}
-          <Button size="sm" onClick={() => setTick((n) => n + 1)}>
-            다시 시도
-          </Button>
-        </EmptyState>
-      ) : tab === 'page' ? (
-        <PageAnalysisSkeleton />
-      ) : (
-        <MonthViewSkeleton tab={tab} hasEstimate={site === 'itket'} />
-      )}
+    <div className="app">
+      <Sidebar
+        title={baseData(site).title}
+        updated={undefined}
+        site={site}
+        onSiteChange={(next) => {
+          setDrawerOpen(false);
+          onSiteChange(next);
+        }}
+        open={drawerOpen}
+        currentTab={route.tab}
+        onCloseDrawer={() => setDrawerOpen(false)}
+        onGoHome={() => go('overview')}
+        onSelectTab={go}
+      />
+      <div className="wrap">
+        <Header title={title} drawerOpen={drawerOpen} isDark={isDark} onOpenDrawer={() => setDrawerOpen(true)} onToggleTheme={toggleTheme} onSearch={() => {}} />
+        {/* 기간 줄 자리 — 데이터가 오면 실제 기간 줄이 같은 높이로 들어와 본문이 밀리지 않는다 */}
+        <div className="period-nav-bar" aria-hidden="true">
+          <div className="period-nav-left">
+            <Skeleton width="13rem" height="var(--h-32)" pill />
+            <Skeleton width="18rem" height="0.75rem" />
+          </div>
+        </div>
+        <div className="cont" aria-busy={!error}>
+          <PageHeader id="pageHeader" title={title} desc={desc} />
+          <LivePanel liveUrl={baseData(site).liveUrl} />
+          <main id="main">
+            {error ? (
+              <EmptyState>
+                데이터를 불러오지 못했습니다.{' '}
+                <Button size="sm" onClick={onRetry}>
+                  다시 시도
+                </Button>
+              </EmptyState>
+            ) : route.tab === 'page' ? (
+              <PageAnalysisSkeleton />
+            ) : (
+              <MonthViewSkeleton tab={route.tab} hasEstimate={site === 'itket'} />
+            )}
+          </main>
+        </div>
+      </div>
     </div>
   );
 }
