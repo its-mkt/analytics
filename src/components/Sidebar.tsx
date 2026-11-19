@@ -13,6 +13,7 @@ import { VIEW_TITLES } from '../utils/views';
 import { CloseButton } from './CloseButton';
 import { Dropdown, type DropdownOption } from './Dropdown';
 import { SegmentedControl } from './SegmentedControl';
+import { Skeleton } from './Skeleton';
 
 type DashboardId = 'ad-insight' | 'analytics';
 
@@ -43,8 +44,8 @@ const NAV_ITEMS: NavItem[] = [
 
 interface SidebarProps {
   title: string;
-  /** 수집본 갱신 시각 (ISO) — 사이드바 아래 '… 수집' 상자 */
-  updated: string | null;
+  /** 수집본 갱신 시각 (ISO) — 사이드바 아래 '… 수집' 상자. undefined 는 아직 받는 중 */
+  updated: string | null | undefined;
   /** 보고 있는 사이트 (아이티켓 / 온코어) */
   site: SiteId;
   onSiteChange: (site: SiteId) => void;
@@ -151,7 +152,8 @@ export function Sidebar({
 }
 
 /** 수집본 갱신 시각 → '2026-11-16 14:31 수집'. 6시간 넘게 갱신이 없으면 지연 표시 (자동 수집은 30분~3시간 간격) */
-function UpdatedBox({ updated }: { updated: string | null }) {
+function UpdatedBox({ updated }: { updated: string | null | undefined }) {
+  if (updated === undefined) return <div className="side-upd" aria-hidden="true"><Skeleton width="70%" height="0.75rem" /></div>;
   if (!updated) return <div className="side-upd stale">아직 수집된 데이터가 없습니다</div>;
   const u = new Date(updated);
   const h = (Date.now() - u.getTime()) / 36e5;

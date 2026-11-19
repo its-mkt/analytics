@@ -259,7 +259,7 @@
   z-index: 5;
 
   h1 {
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 700;
     margin: 0;
     letter-spacing: -0.025em;
@@ -269,7 +269,7 @@
   // 경로: 대시보드 이름(흐리게) / 화면 이름(진하게) — ad-insight 와 같은 강조 순서, 크기는 analytics 규칙
   .crumb-root {
     color: var(--sub);
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     font-weight: 500;
   }
 
@@ -280,7 +280,7 @@
       content: "/ ";
       margin: 0 0.25rem;
       color: var(--sub);
-      font-size: 0.9375rem;
+      font-size: 0.875rem;
       font-weight: 500;
     }
 
@@ -337,8 +337,7 @@
 
 // 헤더 검색 버튼 (아이콘만, 정사각형)
 // 헤더 오른쪽 버튼(검색·엑셀·테마 토글)은 32px — 기본 버튼(40px)보다 한 단계 낮게 (휴대폰은 _responsive 의 48px)
-.top-search,
-.top-logout {
+.top-search {
   width: var(--h-32); // 높이와 같게 — 정사각형(알약이면 동그라미)
   height: var(--h-32);
   padding: 0;

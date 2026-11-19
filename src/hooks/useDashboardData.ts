@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DashboardPayload, GodomallQuotes, GodomallSignups, MonthData, SiteId } from '../types/analytics';
 import { mergeSignups } from '../utils/metrics';
 import { webappUrl, wrongSite } from '../utils/site';
-import { fetchWebapp } from '../lib/access';
+import { fetchWebapp } from '../lib/webapp';
 
 const DEFAULT_DATA: DashboardPayload = {
   names: {},
@@ -19,7 +19,7 @@ const DEFAULT_DATA: DashboardPayload = {
 const CURRENT_MONTH_POLL_MS = 300_000; // 5 minutes
 
 /** 빌드가 심은 공개 값(제목·주소·이름표)에서 그 사이트 몫을 꺼낸다 — 실적(월별 값·견적·가입)은 들어 있지 않다 */
-function baseData(site: SiteId): DashboardPayload {
+export function baseData(site: SiteId): DashboardPayload {
   const w = typeof window !== 'undefined' ? window.__DATA__ : undefined;
   const root = { ...DEFAULT_DATA, ...((w && typeof w === 'object' ? w : {}) as Partial<DashboardPayload>) };
   if (site === 'itket') return { ...root, oncore: undefined };

@@ -547,69 +547,6 @@ function quotesData_() {
   }
 }
 
-/* ── 열람 권한 ──
- * ad-insight 와 같은 계정·승인 명단을 쓴다: Supabase 로그인 토큰 → 이메일 → 데이터 시트(AUTH_SHEET_ID)의 admins·members 탭.
- * 가입·승인은 ad-insight 웹앱이 맡고, 여기서는 읽기만 한다. 서버끼리 부를 때는 스크립트 속성 SERVER_KEY 를 key 로 보낸다. */
-const AUTH_SHEET_ID = '1mxrTeh7bo50RTz_2_UNyQxtQrljoEK4-xgPy9fr8nIg';
-const SUPABASE_URL_ = 'https://tqxljgmygvanysqnhiar.supabase.co';
-const SUPABASE_ANON_KEY_ = 'sb_publishable__Oq9NpOHnxEqRSZ02qJDaw_n-FIAGC2';   // 공개용 키 (화면에도 들어 있는 값)
-const MEMBER_HEAD_ = ['email', 'name', 'team', 'status', 'requested_at', 'decided_at', 'decided_by'];
-const ACCESS_CACHE_SEC_ = 300;
-
-/** 막을 요청이면 응답 본문, 통과면 null */
-function webappGate_(p) {
-  const serverKey = PropertiesService.getScriptProperties().getProperty('SERVER_KEY');
-  if (serverKey && p.key && p.key === serverKey) return null;
-  const acc = accessOf_(p.access_token);
-  if (acc.role === 'admin' || acc.role === 'member') return null;
-  return { error: 'login_required', role: acc.role };
-}
-/** 로그인 토큰 → 이메일 (소문자). 토큰이 없거나 틀리면 '' */
-function tokenEmail_(accessToken) {
-  if (!accessToken) return '';
-  const cache = CacheService.getScriptCache();
-  const ck = 'tok:' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(accessToken)));
-  const hit = cache.get(ck);
-  if (hit != null) return hit;
-  try {
-    const res = UrlFetchApp.fetch(SUPABASE_URL_ + '/auth/v1/user', {
-      headers: { apikey: SUPABASE_ANON_KEY_, Authorization: 'Bearer ' + accessToken },
-      muteHttpExceptions: true,
-    });
-    const code = res.getResponseCode();
-    if (code !== 200 && code !== 401 && code !== 403) return ''; // Supabase 장애는 캐시하지 않는다
-    const email = code === 200 ? String(JSON.parse(res.getContentText()).email || '').trim().toLowerCase() : '';
-    cache.put(ck, email, ACCESS_CACHE_SEC_);
-    return email;
-  } catch (err) {
-    Logger.log('로그인 토큰 확인 실패: ' + err.message);
-    return '';
-  }
-}
-/** role: admin · member(승인됨) · pending · rejected · revoked · none(요청 없음) · invalid(토큰 오류) · guest(토큰 없음) */
-function accessOf_(accessToken) {
-  if (!accessToken) return { role: 'guest' };
-  const email = tokenEmail_(accessToken);
-  if (!email) return { role: 'invalid' };
-  const cache = CacheService.getScriptCache(), ck = 'acc:' + email;
-  const hit = cache.get(ck);
-  if (hit) return JSON.parse(hit);
-  const ss = SpreadsheetApp.openById(AUTH_SHEET_ID);
-  const adm = ss.getSheetByName('admins');
-  const admins = adm ? adm.getDataRange().getValues().map((r) => String(r[0]).trim().toLowerCase()) : [];
-  let acc;
-  if (admins.includes(email)) acc = { email: email, role: 'admin' };
-  else {
-    const sh = ss.getSheetByName('members');
-    const rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, MEMBER_HEAD_.length).getDisplayValues() : [];
-    const m = rows.find((r) => String(r[0]).trim().toLowerCase() === email);
-    const status = m ? String(m[3]).trim() : '';
-    acc = { email: email, role: !m ? 'none' : status === 'approved' ? 'member' : (['rejected', 'revoked'].includes(status) ? status : 'pending') };
-  }
-  cache.put(ck, JSON.stringify(acc), ACCESS_CACHE_SEC_);
-  return acc;
-}
-
 /**
  * 회원가입 달별 최댓값 — 회원 DB 는 1년 넘게 접속 안 한 회원이 휴면 보관소로 옮겨지며 오래된 달일수록 줄어든다.
  * 지금까지 본 값 중 큰 값을 스크립트 속성 SIGNUPS_MAX 에 남겨 그 아래로 내려가지 않게 한다 (예전에는 저장소 data/ref 에 남겼다).
@@ -683,9 +620,7 @@ function signupsData_() {
 function doGet(e) {
   const p = (e && e.parameter) || {};
   const mode = p.mode;
-  // 승인된 계정(로그인 토큰)이나 서버 키(GitHub Actions 수집)만 데이터를 받는다 — 경쟁사·봇이 주소만으로 가져가지 못하게
-  const gate = webappGate_(p);
-  if (gate) return ContentService.createTextOutput(JSON.stringify(gate)).setMimeType(ContentService.MimeType.JSON);
+  // 로그인 없이 누구나 받는다 (2026-11-19 로그인 제거 — 집계 숫자뿐이라 막을 실익이 적다)
   let body;
   try {
     if (p.site === 'oncore') body = Object.assign({ site: 'oncore' }, withSite_('oncore', () => oncoreGet_(mode, p)));

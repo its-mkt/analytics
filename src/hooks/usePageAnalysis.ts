@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { MonthData, PageAnalysisResult } from '../types/analytics';
 import { isGap } from '../utils/metrics';
 import { wrongSite } from '../utils/site';
-import { fetchWebapp } from '../lib/access';
+import { fetchWebapp } from '../lib/webapp';
 
 const PAGE_CACHE_TTL_MS = 120_000; // 2 minutes
 const pageCache: Record<string, { t: number; v: PageAnalysisResult }> = {};

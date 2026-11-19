@@ -11,13 +11,13 @@ import { PeriodNav } from './components/PeriodNav';
 import { SearchDialog } from './components/SearchDialog';
 import { Sidebar } from './components/Sidebar';
 import { YearView } from './components/YearView';
-import { loadSitePayload, useDashboardData } from './hooks/useDashboardData';
+import { baseData, loadSitePayload, useDashboardData } from './hooks/useDashboardData';
 import { Button } from './components/Button';
 import { MonthViewSkeleton } from './components/DashboardSkeleton';
 import { PageAnalysisSkeleton } from './components/PageAnalysisSkeleton';
 import { useRoute } from './hooks/useRoute';
 import { useTheme } from './hooks/useTheme';
-import type { ConvByKey, DashboardPayload, MetricKey, ShopTabKey, SiteId } from './types/analytics';
+import type { ConvByKey, DashboardPayload, MetricKey, ShopTabKey, SiteId, ViewTab } from './types/analytics';
 import type { SearchAction } from './utils/search';
 import { parseRoute, routePath } from './utils/route';
 import { VIEW_DESC, VIEW_TITLES, YEAR_TITLE, yearDesc } from './utils/views';
@@ -44,7 +44,7 @@ export function App() {
 }
 
 /**
- * 그 사이트 데이터를 웹앱에서 받은 뒤 대시보드를 그린다 (로그인한 승인 계정만 — AccessGate 안에서만 그려진다).
+ * 그 사이트 데이터를 웹앱에서 받은 뒤 대시보드를 그린다.
  * 받는 동안은 보던 화면 모양의 로딩 틀, 실패하면 다시 시도 안내.
  */
 function SiteLoader({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: SiteId) => void }) {
@@ -61,21 +61,74 @@ function SiteLoader({ site, onSiteChange }: { site: SiteId; onSiteChange: (site:
   }, [site, tick]);
 
   if (state.data) return <Dashboard site={site} initial={state.data} onSiteChange={onSiteChange} />;
-  const tab = parseRoute().tab;
+  return <LoadingShell site={site} error={!!state.error} onRetry={() => setTick((n) => n + 1)} onSiteChange={onSiteChange} />;
+}
+
+/**
+ * 데이터를 받는 동안의 화면 — ad-insight 처럼 사이드바·헤더·화면 머리말은 그대로 그리고 본문만 로딩 틀로 둔다.
+ * 사이드바 메뉴를 누르면 주소만 바꿔 그 화면 모양의 로딩 틀로 바꾼다 (데이터가 오면 그 화면으로 열린다).
+ */
+function LoadingShell({ site, error, onRetry, onSiteChange }: { site: SiteId; error: boolean; onRetry: () => void; onSiteChange: (site: SiteId) => void }) {
+  const { isDark, toggleTheme } = useTheme();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [, rerender] = useState(0);
+  const route = parseRoute();
+  const isYear = route.tab !== 'page' && /^d{4}$/.test(route.m);
+  const title = isYear ? YEAR_TITLE : VIEW_TITLES[route.tab];
+  const desc = isYear ? yearDesc(route.m) : VIEW_DESC[route.tab];
+  const maxMonth = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 7); // 이번 달 (한국 시간)
+  const minMonth = baseData(site).startMonth || '2025-01';
+  const years = Array.from({ length: +maxMonth.slice(0, 4) - +minMonth.slice(0, 4) + 1 }, (_, i) => String(+minMonth.slice(0, 4) + i));
+  const period = route.tab === 'page' ? (/^d{4}-d{2}$/.test(route.m) ? route.m : maxMonth) : route.m || maxMonth;
+  const pickPeriod = (m: string) => {
+    history.pushState(null, '', routePath({ ...route, m: m === maxMonth ? '' : m }));
+    rerender((n) => n + 1);
+  };
+  const go = (tab: ViewTab) => {
+    history.pushState(null, '', routePath({ ...route, tab, q: '', m: '' }));
+    setDrawerOpen(false);
+    rerender((n) => n + 1);
+  };
+
   return (
-    <div className="site-loading">
-      {state.error ? (
-        <EmptyState>
-          데이터를 불러오지 못했습니다.{' '}
-          <Button size="sm" onClick={() => setTick((n) => n + 1)}>
-            다시 시도
-          </Button>
-        </EmptyState>
-      ) : tab === 'page' ? (
-        <PageAnalysisSkeleton />
-      ) : (
-        <MonthViewSkeleton tab={tab} hasEstimate={site === 'itket'} />
-      )}
+    <div className="app">
+      <Sidebar
+        title={baseData(site).title}
+        updated={undefined}
+        site={site}
+        onSiteChange={(next) => {
+          setDrawerOpen(false);
+          onSiteChange(next);
+        }}
+        open={drawerOpen}
+        currentTab={route.tab}
+        onCloseDrawer={() => setDrawerOpen(false)}
+        onGoHome={() => go('overview')}
+        onSelectTab={go}
+      />
+      <div className="wrap">
+        <Header title={title} drawerOpen={drawerOpen} isDark={isDark} onOpenDrawer={() => setDrawerOpen(true)} onToggleTheme={toggleTheme} onSearch={() => {}} />
+        {/* 기간 줄은 데이터가 없어도 고를 수 있다 (수집 시작 달 ~ 이번 달). 집계 기준 안내만 데이터가 온 뒤에 붙는다 */}
+        <PeriodNav years={years} selectedPeriod={period} minAvailableMonth={minMonth} maxAvailableMonth={maxMonth} onSelectPeriod={pickPeriod} />
+        <div className="cont" aria-busy={!error}>
+          <PageHeader id="pageHeader" title={title} desc={desc} />
+          <LivePanel liveUrl={baseData(site).liveUrl} />
+          <main id="main">
+            {error ? (
+              <EmptyState>
+                데이터를 불러오지 못했습니다.{' '}
+                <Button size="sm" onClick={onRetry}>
+                  다시 시도
+                </Button>
+              </EmptyState>
+            ) : route.tab === 'page' ? (
+              <PageAnalysisSkeleton />
+            ) : (
+              <MonthViewSkeleton tab={route.tab} hasEstimate={site === 'itket'} />
+            )}
+          </main>
+        </div>
+      </div>
     </div>
   );
 }
