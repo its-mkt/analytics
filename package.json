@@ -13,7 +13,6 @@
     "mock": "GA4_MOCK=1 DATA_DIR=.sample/data SITE_DIR=.sample/site node scripts/collect.mjs && DATA_DIR=.sample/data SITE_DIR=.sample/site node scripts/build-site.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^1.60.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

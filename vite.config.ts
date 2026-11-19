@@ -46,7 +46,7 @@ const readJson = (file: string, fallback: unknown) => (fs.existsSync(file) ? JSO
 
 /**
  * 화면에 심는 값 — 제목·주소·내부 트래픽 설정·상품 이름표처럼 공개돼도 되는 값만 둔다.
- * GA4 월별 값·견적·회원가입 같은 실적은 심지 않는다: 로그인한 승인 계정만 수집기 웹앱에서 받는다 (2026-11-18, 경쟁사·봇 차단).
+ * GA4 월별 값·견적·회원가입 같은 실적은 심지 않는다: 화면이 열릴 때 수집기 웹앱에서 받는다 (저장소에 실적을 쌓지 않으려고, 2026-11-18).
  * 아이티켓 값이 맨 위, 온코어 값은 oncore 아래에 같은 형식으로 둔다.
  */
 export function loadDashboardPayload(mode = process.env.NODE_ENV || 'development') {

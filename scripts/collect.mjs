@@ -95,7 +95,7 @@ function collectMock(m) {
 }
 
 // 가장 간단한 경로: Apps Script 웹앱(apps-script/Code.gs)이 만들어 둔 JSON 을 받아 월별 파일로 저장한다.
-// 수집기 웹앱은 승인된 로그인 계정이나 서버 키(Secret GA4_SERVER_KEY = 웹앱 스크립트 속성 SERVER_KEY)에만 데이터를 준다
+// 수집기 웹앱은 2026-11-19 부터 로그인 없이 공개라 키가 없어도 받는다. Secret GA4_SERVER_KEY 가 있으면 그대로 붙인다(무해)
 const withKey = (url) => (process.env.GA4_SERVER_KEY ? `${url}${url.includes('?') ? '&' : '?'}key=${encodeURIComponent(process.env.GA4_SERVER_KEY.trim())}` : url);
 
 if (process.env.GA4_WEBAPP_URL) {

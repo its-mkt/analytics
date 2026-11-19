@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DashboardPayload, GodomallQuotes, GodomallSignups, MonthData, SiteId } from '../types/analytics';
 import { mergeSignups } from '../utils/metrics';
 import { webappUrl, wrongSite } from '../utils/site';
-import { fetchWebapp } from '../lib/access';
+import { fetchWebapp } from '../lib/webapp';
 
 const DEFAULT_DATA: DashboardPayload = {
   names: {},

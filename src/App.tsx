@@ -44,7 +44,7 @@ export function App() {
 }
 
 /**
- * 그 사이트 데이터를 웹앱에서 받은 뒤 대시보드를 그린다 (로그인한 승인 계정만 — AccessGate 안에서만 그려진다).
+ * 그 사이트 데이터를 웹앱에서 받은 뒤 대시보드를 그린다.
  * 받는 동안은 보던 화면 모양의 로딩 틀, 실패하면 다시 시도 안내.
  */
 function SiteLoader({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: SiteId) => void }) {

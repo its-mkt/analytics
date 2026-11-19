@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LivePayload } from '../types/analytics';
 import { wrongSite } from '../utils/site';
-import { fetchWebapp } from '../lib/access';
+import { fetchWebapp } from '../lib/webapp';
 
 const IDLE_MS = 15 * 60 * 1000; // 15 minutes
 const POLL_INTERVAL_MS = 15_000; // 15 seconds

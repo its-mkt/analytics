@@ -1,5 +1,4 @@
-import { FileSpreadsheet, LogOut, Menu, Moon, Search, Sun } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { FileSpreadsheet, Menu, Moon, Search, Sun } from 'lucide-react';
 import { Button } from './Button';
 
 interface HeaderProps {
@@ -19,7 +18,6 @@ interface HeaderProps {
  * 마지막 갱신 시각은 ad-insight 처럼 사이드바 아래에 둔다.
  */
 export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme, onSearch, onExportExcel }: HeaderProps) {
-  const { user, logout } = useAuth();
   return (
     <header className="top">
       <Button
@@ -82,15 +80,6 @@ export function Header({ title, drawerOpen, isDark, onOpenDrawer, onToggleTheme,
           </span>
           <i className="toggle-thumb" aria-hidden="true" />
         </button>
-
-        {/* 로그아웃 — 광고 인사이트와 로그인을 함께 쓰므로 그쪽도 함께 로그아웃된다 */}
-        <Button
-          className="icon top-logout"
-          aria-label="로그아웃"
-          title={user?.email ? `${user.email} 로그아웃` : '로그아웃'}
-          onClick={() => void logout()}
-          icon={<LogOut size={18} aria-hidden="true" />}
-        />
       </div>
     </header>
   );
