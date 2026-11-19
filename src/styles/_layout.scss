@@ -259,7 +259,7 @@
   z-index: 5;
 
   h1 {
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 700;
     margin: 0;
     letter-spacing: -0.025em;
@@ -269,7 +269,7 @@
   // 경로: 대시보드 이름(흐리게) / 화면 이름(진하게) — ad-insight 와 같은 강조 순서, 크기는 analytics 규칙
   .crumb-root {
     color: var(--sub);
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     font-weight: 500;
   }
 
@@ -280,7 +280,7 @@
       content: "/ ";
       margin: 0 0.25rem;
       color: var(--sub);
-      font-size: 0.9375rem;
+      font-size: 0.875rem;
       font-weight: 500;
     }
 

@@ -45,7 +45,7 @@
 
 @media (max-width: $bp-md) {
   html {
-    font-size: 14px;
+    font-size: 87.5%; // 브라우저 기본 16px일 때 14px (ad-insight 와 같게)
     -webkit-text-size-adjust: 100%;
   }
 
@@ -87,7 +87,7 @@
 
     h1 {
       grid-area: t;
-      font-size: 1.25rem;
+      font-size: 1.125rem;
       line-height: 1.25;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -238,7 +238,7 @@
   .nav-item {
     height: var(--h-48);
     padding: 0 0.875rem;
-    font-size: 0.9375rem;
+    font-size: 1rem;
 
     &.on {
       background: var(--acc);
@@ -289,7 +289,7 @@
     }
 
     .value {
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       margin: 0.25rem 0 0.25rem;
     }
   }
@@ -361,7 +361,7 @@
     padding: 1rem;
 
     .num {
-      font-size: 2rem;
+      font-size: 1.25rem;
     }
 
     li:nth-child(n + 4) {
@@ -424,12 +424,12 @@
     grid-template-columns: minmax(0, 1fr);
 
     .num {
-      font-size: 2rem;
+      font-size: 1.25rem;
     }
   }
 
   .top h1 {
-    font-size: 1.125rem;
+    font-size: 1rem;
   }
 }
 
