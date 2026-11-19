@@ -1,0 +1,169 @@
+// 접속 관문(AccessGate) — 로그인·회원가입·승인 대기 카드를 화면 가운데 띄운다 (ad-insight 접속 화면과 같은 모양)
+.access-gate {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  padding: 1rem;
+  background: var(--bg);
+}
+
+.card.gate-card {
+  width: 100%;
+  max-width: 26rem;
+  margin: auto;
+  padding: 2rem 1.75rem;
+  text-align: center;
+
+  .gate-icon {
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    background: var(--accbg);
+    border: 1px solid var(--acc);
+    color: var(--acc);
+  }
+
+  // 공용 .card h2(왼쪽 정렬 flex)를 가운데로
+  h2 {
+    justify-content: center;
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  p {
+    margin: 0 0 1.25rem;
+    font-size: 0.875rem;
+    color: var(--sub);
+    line-height: 1.5;
+  }
+
+  .gate-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .gate-input {
+    width: 100%;
+    height: var(--h-40);
+    padding: 0 1rem;
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line2);
+    border-radius: 0.5rem;
+    outline: none;
+
+    &:focus {
+      border-color: var(--acc);
+    }
+
+    &.err {
+      border-color: var(--warn);
+    }
+  }
+
+  .gate-error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--warn);
+    text-align: left;
+  }
+
+  .btn-gate {
+    width: 100%;
+    font-weight: 700;
+  }
+
+  // 로그인 버튼 밑 "계정이 없으신가요? 회원가입"
+  p.gate-switch {
+    margin: 1rem 0 0;
+    font-size: 0.8125rem;
+  }
+
+  .gate-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: var(--accink);
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .gate-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .gate-account {
+    flex-basis: 100%;
+    font-size: 0.75rem;
+    color: var(--sub);
+  }
+}
+
+// 데이터를 받는 동안·실패했을 때 (대시보드 틀 없이)
+.site-loading {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+// 이메일 인증번호 2단계 — 보낸 주소 안내·인증번호 칸·다시 보내기/이메일 바꾸기
+.card.gate-card {
+  p.gate-code-sent {
+    margin: 0;
+    font-size: 0.8125rem;
+    text-align: left;
+    word-break: break-all;
+
+    strong {
+      color: var(--ink);
+    }
+  }
+
+  .gate-input.gate-code {
+    text-align: center;
+    font-size: 1.125rem;
+    letter-spacing: 0.4em;
+  }
+
+  .gate-code-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+
+    .gate-link:disabled {
+      color: var(--sub);
+      cursor: default;
+      text-decoration: none;
+    }
+  }
+}
+
+// 로그인 방식 전환 (인증번호 ↔ 비밀번호) — ad-insight 와 같은 자리
+.gate-card p.gate-method {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  text-align: center;
+}

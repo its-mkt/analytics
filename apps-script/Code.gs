@@ -547,7 +547,102 @@ function quotesData_() {
   }
 }
 
-/** 고도몰 회원 DB(es_member) 가입일별 건수 → { monthly, daily }. 15분 캐시. 실패하면 null(대시보드는 빌드 스냅샷 사용). */
+/* ── 열람 권한 ──
+ * ad-insight 와 같은 계정·승인 명단을 쓴다: Supabase 로그인 토큰 → 이메일 → 데이터 시트(AUTH_SHEET_ID)의 admins·members 탭.
+ * 가입·승인은 ad-insight 웹앱이 맡고, 여기서는 읽기만 한다. 서버끼리 부를 때는 스크립트 속성 SERVER_KEY 를 key 로 보낸다. */
+const AUTH_SHEET_ID = '1mxrTeh7bo50RTz_2_UNyQxtQrljoEK4-xgPy9fr8nIg';
+const SUPABASE_URL_ = 'https://tqxljgmygvanysqnhiar.supabase.co';
+const SUPABASE_ANON_KEY_ = 'sb_publishable__Oq9NpOHnxEqRSZ02qJDaw_n-FIAGC2';   // 공개용 키 (화면에도 들어 있는 값)
+const MEMBER_HEAD_ = ['email', 'name', 'team', 'status', 'requested_at', 'decided_at', 'decided_by'];
+const ACCESS_CACHE_SEC_ = 300;
+
+/** 막을 요청이면 응답 본문, 통과면 null */
+function webappGate_(p) {
+  const serverKey = PropertiesService.getScriptProperties().getProperty('SERVER_KEY');
+  if (serverKey && p.key && p.key === serverKey) return null;
+  const acc = accessOf_(p.access_token);
+  if (acc.role === 'admin' || acc.role === 'member') return null;
+  return { error: 'login_required', role: acc.role };
+}
+/** 로그인 토큰 → 이메일 (소문자). 토큰이 없거나 틀리면 '' */
+function tokenEmail_(accessToken) {
+  if (!accessToken) return '';
+  const cache = CacheService.getScriptCache();
+  const ck = 'tok:' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(accessToken)));
+  const hit = cache.get(ck);
+  if (hit != null) return hit;
+  try {
+    const res = UrlFetchApp.fetch(SUPABASE_URL_ + '/auth/v1/user', {
+      headers: { apikey: SUPABASE_ANON_KEY_, Authorization: 'Bearer ' + accessToken },
+      muteHttpExceptions: true,
+    });
+    const code = res.getResponseCode();
+    if (code !== 200 && code !== 401 && code !== 403) return ''; // Supabase 장애는 캐시하지 않는다
+    const email = code === 200 ? String(JSON.parse(res.getContentText()).email || '').trim().toLowerCase() : '';
+    cache.put(ck, email, ACCESS_CACHE_SEC_);
+    return email;
+  } catch (err) {
+    Logger.log('로그인 토큰 확인 실패: ' + err.message);
+    return '';
+  }
+}
+/** role: admin · member(승인됨) · pending · rejected · revoked · none(요청 없음) · invalid(토큰 오류) · guest(토큰 없음) */
+function accessOf_(accessToken) {
+  if (!accessToken) return { role: 'guest' };
+  const email = tokenEmail_(accessToken);
+  if (!email) return { role: 'invalid' };
+  const cache = CacheService.getScriptCache(), ck = 'acc:' + email;
+  const hit = cache.get(ck);
+  if (hit) return JSON.parse(hit);
+  const ss = SpreadsheetApp.openById(AUTH_SHEET_ID);
+  const adm = ss.getSheetByName('admins');
+  const admins = adm ? adm.getDataRange().getValues().map((r) => String(r[0]).trim().toLowerCase()) : [];
+  let acc;
+  if (admins.includes(email)) acc = { email: email, role: 'admin' };
+  else {
+    const sh = ss.getSheetByName('members');
+    const rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, MEMBER_HEAD_.length).getDisplayValues() : [];
+    const m = rows.find((r) => String(r[0]).trim().toLowerCase() === email);
+    const status = m ? String(m[3]).trim() : '';
+    acc = { email: email, role: !m ? 'none' : status === 'approved' ? 'member' : (['rejected', 'revoked'].includes(status) ? status : 'pending') };
+  }
+  cache.put(ck, JSON.stringify(acc), ACCESS_CACHE_SEC_);
+  return acc;
+}
+
+/**
+ * 회원가입 달별 최댓값 — 회원 DB 는 1년 넘게 접속 안 한 회원이 휴면 보관소로 옮겨지며 오래된 달일수록 줄어든다.
+ * 지금까지 본 값 중 큰 값을 스크립트 속성 SIGNUPS_MAX 에 남겨 그 아래로 내려가지 않게 한다 (예전에는 저장소 data/ref 에 남겼다).
+ */
+function keepSignupsMax_(monthly) {
+  const props = PropertiesService.getScriptProperties();
+  let kept = {};
+  try { kept = JSON.parse(props.getProperty('SIGNUPS_MAX') || '{}'); } catch (e) { kept = {}; }
+  const out = Object.assign({}, monthly);
+  let changed = false;
+  Object.keys(out).forEach((m) => { if (!(Number(kept[m]) >= out[m])) { kept[m] = out[m]; changed = true; } });
+  Object.keys(kept).forEach((m) => { if (Number(kept[m]) > (out[m] || 0)) out[m] = Number(kept[m]); });
+  if (changed) props.setProperty('SIGNUPS_MAX', JSON.stringify(kept));
+  return out;
+}
+/** 한 번만 실행: 저장소에 남아 있던 회원가입 바닥값(수집 최댓값·관리자 통계)을 SIGNUPS_MAX 로 옮긴다 */
+function seedSignupsMax() {
+  const base = 'https://raw.githubusercontent.com/its-mkt/analytics/883c362/data/ref/';
+  const kept = {};
+  ['godomall-signups.json', 'godomall-signups-admin.json'].forEach((f) => {
+    const monthly = JSON.parse(UrlFetchApp.fetch(base + f).getContentText()).monthly || {};
+    Object.keys(monthly).forEach((m) => { kept[m] = Math.max(kept[m] || 0, Number(monthly[m]) || 0); });
+  });
+  const props = PropertiesService.getScriptProperties();
+  let cur = {};
+  try { cur = JSON.parse(props.getProperty('SIGNUPS_MAX') || '{}'); } catch (e) { cur = {}; }
+  Object.keys(cur).forEach((m) => { kept[m] = Math.max(kept[m] || 0, Number(cur[m]) || 0); });
+  props.setProperty('SIGNUPS_MAX', JSON.stringify(kept));
+  CacheService.getScriptCache().remove('signupsData_v1');
+  Logger.log('SIGNUPS_MAX ' + Object.keys(kept).length + '개월 저장');
+}
+
+/** 고도몰 회원 DB(es_member) 가입일별 건수 → { monthly, daily }. 15분 캐시. 실패하면 null. monthly 는 달별 최댓값(keepSignupsMax_). */
 function signupsData_() {
   const cache = CacheService.getScriptCache();
   const ck = 'signupsData_v1';
@@ -573,7 +668,7 @@ function signupsData_() {
       daily[d] = n;
       monthly[d.slice(0, 7)] = (monthly[d.slice(0, 7)] || 0) + n;
     });
-    const result = { asOf: today, source: '고도몰 회원 DB(es_member) 가입일 기준 — 아이티켓 서버 조회 API', monthly: monthly, daily: daily };
+    const result = { asOf: today, source: '고도몰 회원 DB(es_member) 가입일 기준 — 아이티켓 서버 조회 API', monthly: keepSignupsMax_(monthly), daily: daily };
     cache.put(ck, JSON.stringify(result), 900);
     return result;
   } catch (e) {
@@ -588,6 +683,9 @@ function signupsData_() {
 function doGet(e) {
   const p = (e && e.parameter) || {};
   const mode = p.mode;
+  // 승인된 계정(로그인 토큰)이나 서버 키(GitHub Actions 수집)만 데이터를 받는다 — 경쟁사·봇이 주소만으로 가져가지 못하게
+  const gate = webappGate_(p);
+  if (gate) return ContentService.createTextOutput(JSON.stringify(gate)).setMimeType(ContentService.MimeType.JSON);
   let body;
   try {
     if (p.site === 'oncore') body = Object.assign({ site: 'oncore' }, withSite_('oncore', () => oncoreGet_(mode, p)));

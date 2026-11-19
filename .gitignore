@@ -9,3 +9,9 @@ data/ref/*.log
 data/ref/*.png
 *.png
 .vscode/
+
+# 실적 데이터·빌드 결과는 커밋하지 않는다 (공개 저장소 — 로그인한 승인 계정만 웹앱에서 받음, 2026-11-18)
+data/ga4/
+data/oncore/ga4/
+data/ref/
+site/

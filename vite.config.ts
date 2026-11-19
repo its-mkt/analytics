@@ -43,53 +43,37 @@ function releaseInfo(): { tag: string; commit: string } {
 const release = releaseInfo();
 
 const readJson = (file: string, fallback: unknown) => (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback);
-const readMonths = (ga4Dir: string) => {
-  const files = fs.existsSync(ga4Dir) ? fs.readdirSync(ga4Dir).filter((f) => /^\d{4}-\d{2}\.json$/.test(f)).sort() : [];
-  const months: Record<string, unknown> = {};
-  for (const f of files) months[f.slice(0, 7)] = JSON.parse(fs.readFileSync(path.join(ga4Dir, f), 'utf8'));
-  return months;
-};
 
 /**
- * 화면에 심는 데이터. 아이티켓 값이 맨 위(예전 형식 그대로), 온코어 값은 oncore 아래에 같은 형식으로 둔다.
- * 온코어: data/oncore/ga4/*.json · data/oncore/names.json, 제목·주소는 config/ga4.json 의 oncore. 견적·회원가입 실데이터는 아이티켓만 있다.
+ * 화면에 심는 값 — 제목·주소·내부 트래픽 설정·상품 이름표처럼 공개돼도 되는 값만 둔다.
+ * GA4 월별 값·견적·회원가입 같은 실적은 심지 않는다: 로그인한 승인 계정만 수집기 웹앱에서 받는다 (2026-11-18, 경쟁사·봇 차단).
+ * 아이티켓 값이 맨 위, 온코어 값은 oncore 아래에 같은 형식으로 둔다.
  */
 export function loadDashboardPayload(mode = process.env.NODE_ENV || 'development') {
   const env = loadEnv(mode, ROOT, '');
   const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data');
   const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'ga4.json'), 'utf8'));
   const liveUrl = process.env.GA4_WEBAPP_URL || env.GA4_WEBAPP_URL || '';
-  const months = readMonths(path.join(dataDir, 'ga4'));
   const oc = cfg.oncore;
-  const ocDir = path.join(dataDir, 'oncore');
   const oncore = oc
     ? {
         site: 'oncore',
-        names: readJson(path.join(ocDir, 'names.json'), {}),
-        godoSignups: null,
-        godoQuotes: null,
+        names: readJson(path.join(dataDir, 'oncore', 'names.json'), {}),
         title: oc.title as string,
         siteUrl: oc.siteUrl as string,
+        startMonth: (oc.startMonth as string) || '',
         internal: oc.internalFilter || { state: 'pending', since: null },
-        meta: readJson(path.join(ocDir, 'ga4', '_meta.json'), { updated: null }),
-        months: readMonths(path.join(ocDir, 'ga4')),
         liveUrl,
       }
     : undefined;
 
   return {
-    fileCount: Object.keys(months).length,
     payload: {
       site: 'itket',
       names: readJson(path.join(dataDir, 'names.json'), {}),
-      godoSignups: readJson(path.join(dataDir, 'ref', 'godomall-signups.json'), null),
-      godoSignupsAdmin: readJson(path.join(dataDir, 'ref', 'godomall-signups-admin.json'), null),
-      godoQuotes: readJson(path.join(dataDir, 'ref', 'godomall-quotes.json'), null),
       title: cfg.title as string,
       siteUrl: cfg.siteUrl as string,
       internal: cfg.internalFilter || { state: 'pending', since: null },
-      meta: readJson(path.join(dataDir, 'ga4', '_meta.json'), { updated: null }),
-      months,
       liveUrl,
       oncore,
     },

@@ -1,6 +1,8 @@
 name: Update Dashboard
 
-# 3시간마다 GA4 데이터를 받아 site/index.html 을 다시 만들고 커밋한다. 사람이 할 일 없음.
+# 3시간마다 상품·카테고리·게시판 이름표를 갱신하고 화면을 다시 빌드·배포한다. 사람이 할 일 없음.
+# 실적 데이터(GA4 월별·견적·가입)와 빌드 결과(site/)는 저장소에 커밋하지 않는다 — 공개 저장소라 경쟁사·봇이 볼 수 있어서 (2026-11-18).
+# 화면은 로그인한 승인 계정만 수집기 웹앱에서 데이터를 받는다. 수집 단계는 이름표 조회에 쓸 상품 번호를 얻으려고 실행 중에만 받는다.
 on:
   schedule:
     - cron: '17 */3 * * *'
@@ -35,6 +37,7 @@ jobs:
         continue-on-error: true
         env:
           GA4_WEBAPP_URL: ${{ secrets.GA4_WEBAPP_URL }}
+          GA4_SERVER_KEY: ${{ secrets.GA4_SERVER_KEY }}
           GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
           GA4_SERVICE_ACCOUNT: ${{ secrets.GA4_SERVICE_ACCOUNT }}
         run: node scripts/collect.mjs
@@ -46,17 +49,13 @@ jobs:
         env:
           SITE: oncore
         run: node scripts/resolve-names.mjs
-      - name: 대시보드 생성
-        env:
-          GA4_WEBAPP_URL: ${{ secrets.GA4_WEBAPP_URL }}
-        run: node scripts/build-site.mjs
       - name: 변경분 커밋
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data site
+          git add data/names.json data/oncore/names.json
           if git diff --cached --quiet; then echo '변경 없음'; exit 0; fi
-          git commit -m 'chore: 대시보드 데이터 자동 갱신'
+          git commit -m 'chore: 상품·게시판 이름표 자동 갱신'
           # 실행 중에 누군가 push 했으면(수동 커밋 등) 최신본 위로 얹어 다시 시도한다. 충돌 시 자동 생성 파일은 이번 결과를 우선.
           for i in 1 2 3; do
             git pull --rebase -X theirs origin main && git push && exit 0
@@ -98,6 +97,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - name: 화면 빌드 (실적 데이터 없음)
+        env:
+          GA4_WEBAPP_URL: ${{ secrets.GA4_WEBAPP_URL }}
+        run: yarn build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

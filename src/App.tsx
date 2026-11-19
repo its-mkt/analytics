@@ -11,10 +11,13 @@ import { PeriodNav } from './components/PeriodNav';
 import { SearchDialog } from './components/SearchDialog';
 import { Sidebar } from './components/Sidebar';
 import { YearView } from './components/YearView';
-import { useDashboardData } from './hooks/useDashboardData';
+import { loadSitePayload, useDashboardData } from './hooks/useDashboardData';
+import { Button } from './components/Button';
+import { MonthViewSkeleton } from './components/DashboardSkeleton';
+import { PageAnalysisSkeleton } from './components/PageAnalysisSkeleton';
 import { useRoute } from './hooks/useRoute';
 import { useTheme } from './hooks/useTheme';
-import type { ConvByKey, MetricKey, ShopTabKey, SiteId } from './types/analytics';
+import type { ConvByKey, DashboardPayload, MetricKey, ShopTabKey, SiteId } from './types/analytics';
 import type { SearchAction } from './utils/search';
 import { parseRoute, routePath } from './utils/route';
 import { VIEW_DESC, VIEW_TITLES, YEAR_TITLE, yearDesc } from './utils/views';
@@ -37,11 +40,48 @@ export function App() {
     window.scrollTo({ top: 0 });
   };
 
-  return <Dashboard key={site} site={site} onSiteChange={changeSite} />;
+  return <SiteLoader key={site} site={site} onSiteChange={changeSite} />;
 }
 
-function Dashboard({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: SiteId) => void }) {
-  const { data, keys, years, latestKey, godoQuotesLoading } = useDashboardData(site);
+/**
+ * 그 사이트 데이터를 웹앱에서 받은 뒤 대시보드를 그린다 (로그인한 승인 계정만 — AccessGate 안에서만 그려진다).
+ * 받는 동안은 보던 화면 모양의 로딩 틀, 실패하면 다시 시도 안내.
+ */
+function SiteLoader({ site, onSiteChange }: { site: SiteId; onSiteChange: (site: SiteId) => void }) {
+  const [state, setState] = useState<{ data?: DashboardPayload; error?: string }>({});
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    setState({});
+    loadSitePayload(site).then((res) => alive && setState(res));
+    return () => {
+      alive = false;
+    };
+  }, [site, tick]);
+
+  if (state.data) return <Dashboard site={site} initial={state.data} onSiteChange={onSiteChange} />;
+  const tab = parseRoute().tab;
+  return (
+    <div className="site-loading">
+      {state.error ? (
+        <EmptyState>
+          데이터를 불러오지 못했습니다.{' '}
+          <Button size="sm" onClick={() => setTick((n) => n + 1)}>
+            다시 시도
+          </Button>
+        </EmptyState>
+      ) : tab === 'page' ? (
+        <PageAnalysisSkeleton />
+      ) : (
+        <MonthViewSkeleton tab={tab} hasEstimate={site === 'itket'} />
+      )}
+    </div>
+  );
+}
+
+function Dashboard({ site, initial, onSiteChange }: { site: SiteId; initial: DashboardPayload; onSiteChange: (site: SiteId) => void }) {
+  const { data, keys, years, latestKey, godoQuotesLoading } = useDashboardData(initial);
   const {
     isPage,
     currentTab,

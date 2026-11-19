@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { MonthData, PageAnalysisResult } from '../types/analytics';
 import { isGap } from '../utils/metrics';
-import { webappUrl, wrongSite } from '../utils/site';
+import { wrongSite } from '../utils/site';
+import { fetchWebapp } from '../lib/access';
 
 const PAGE_CACHE_TTL_MS = 120_000; // 2 minutes
 const pageCache: Record<string, { t: number; v: PageAnalysisResult }> = {};
@@ -48,11 +49,8 @@ export function usePageAnalysis(
     setPageBusy(true);
     setPageRes(null);
 
-    fetch(
-      webappUrl(liveUrl, `mode=page&month=${encodeURIComponent(pageM)}&q=${encodeURIComponent(pageQ)}`),
-    )
-      .then((res) => res.json())
-      .then((result: PageAnalysisResult) => {
+    fetchWebapp<PageAnalysisResult>(liveUrl, `mode=page&month=${encodeURIComponent(pageM)}&q=${encodeURIComponent(pageQ)}`)
+      .then((result) => {
         if (cancelled) return;
         if (wrongSite(liveUrl, result)) {
           result = { error: '수집기(Apps Script)가 아직 온코어 페이지 분석을 지원하지 않습니다. Code.gs 새 버전을 배포하면 사용할 수 있습니다.' };
